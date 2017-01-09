@@ -115,7 +115,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="C:\dev_my\DevKD\Common\UT_String.h" />
     <ClInclude Include="EnglishTraining.h" />
     <ClInclude Include="EnglishTrainingDlg.h" />
     <ClInclude Include="gen_random.h" />
@@ -124,13 +123,13 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="C:\dev_my\DevKD\Common\UT_String.cpp" />
     <ClCompile Include="EnglishTraining.cpp" />
     <ClCompile Include="EnglishTrainingDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="UT_String.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="EnglishTraining.rc" />

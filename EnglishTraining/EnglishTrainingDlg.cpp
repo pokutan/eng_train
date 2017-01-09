@@ -3,15 +3,9 @@
 #include "EnglishTraining.h"
 #include "EnglishTrainingDlg.h"
 #include "afxdialogex.h"
-#include "SysToolsDyn.h"
-#include "KDWinInet.h"
-
-// TODO: these would be removed
-#include "UT_String.h"
-#pragma comment(lib, "SysTools")
 
 #ifdef _DEBUG
-#define new DEBUG_NEW
+    #define new DEBUG_NEW
 #endif
 
 #include <fstream>
@@ -228,9 +222,9 @@ void CEnglishTrainingDlg::OnPaint(){
 HCURSOR CEnglishTrainingDlg::OnQueryDragIcon(){ return static_cast<HCURSOR>(m_hIcon); }
 
 void CEnglishTrainingDlg::read_source_file(){
-    if(!IsFileExists(_source_file))
-        if(!DownloadFileSynch("http://www.pokutan.com/tmp/words.txt",_source_file))
-            return;
+    //if(!IsFileExists(_source_file))
+    //    if(!DownloadFileSynch("http://www.pokutan.com/tmp/words.txt",_source_file))
+    //        return;
     std::stringstream ss;
     std::ifstream ifs(_source_file);
     _words_map.clear();
@@ -344,13 +338,13 @@ void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
         Stat_Result.SetWindowTextW(s.c_str());
         return;
     }
-    STRINGW src;
+    wstring src;
     SourceWord.GetWindowTextW(&src[0],MAX_PATH);
     if(src == compare_to.c_str()){
         ShowWindow(SW_HIDE);
         src += L" - ";
         src += curr_translation;
-        PrevTranslation.SetWindowTextW(src.Str());
+        PrevTranslation.SetWindowTextW(src.c_str());
         if(_opt.to() != -1)
             _my_timer = SetTimer(1,_opt.to(),NULL);
         try_counter = 1;
@@ -411,19 +405,25 @@ void CEnglishTrainingDlg::open_url(URLS url_index_){
     if(url_index_ < url_vocab && !_curr_pair.first.length())
         return;
     string url;
-    STRINGA s;
+    char* s = nullptr;
     if(url_index_ == url_synonym){
         url = _urls[url_synonym];
-        WC2MB(_curr_pair.first.c_str(), s);
-        url += s.Str();
+        size_t len = _curr_pair.first.length() + 1;
+        s = new char[len];
+        WC2MB(_curr_pair.first.c_str(), s, len, CP_ACP);
+        url += s;
+        delete[] s;
     }else if(url_index_ != url_vocab && _last_eng_word.length()){
         url = _urls[url_index_];
-        WC2MB(_last_eng_word.c_str(), s);
-        char* p = strchr(&s[0], ',');
+        size_t len = _last_eng_word.length() + 1;
+        new char[len];
+        WC2MB(_last_eng_word.c_str(), s, len, CP_ACP);
+        char* p = strchr(s, ',');
         if(p)*p = '\0';
-        if(p = strchr(&s[0], '('))*p = '\0';
-        if(p = strchr(&s[0], ' '))*p = '\0';
-        url += s.Str();
+        if(p = strchr(s, '('))*p = '\0';
+        if(p = strchr(s, ' '))*p = '\0';
+        url += s;
+        delete[] s;
     }else
         url = _urls[url_index_];
     if(url.length())

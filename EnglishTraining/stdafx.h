@@ -22,8 +22,6 @@
 
 #include <afxdisp.h>        // MFC Automation classes
 
-
-
 #ifndef _AFX_NO_OLE_SUPPORT
 #include <afxdtctl.h>           // MFC support for Internet Explorer 4 Common Controls
 #endif
@@ -32,13 +30,6 @@
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
 #include <afxcontrolbars.h>     // MFC support for ribbons and control bars
-
-
-
-
-
-
-
 
 
 #ifdef _UNICODE
@@ -51,4 +42,14 @@
 #endif
 #endif
 
+wchar_t* MB2WC(char const* _sIn, DWORD _CodePage = CP_ACP);
+bool MB2WC(char const* _sIn, wchar_t** _sOut, DWORD _CodePage = CP_ACP);
+bool MB2WC(char const* _sIn, wchar_t* _sOut, size_t& _OutLen, DWORD _CodePage = CP_ACP);
+char* WC2MB(wchar_t const* _sIn, DWORD _CodePage = CP_ACP, int _Len = -1);
+bool WC2MB(wchar_t const* _sIn, char** _sOut, DWORD _CodePage);
+bool WC2MB(wchar_t const* _sIn, char* _sOut, size_t& _OutLen, DWORD _CodePage);
+int CompareWideCharString(const wchar_t* _s1, const wchar_t* _s2, DWORD _Len);
+size_t MakeString(wchar_t const* _Str, wchar_t** _pVar);
 
+_Success_(return==true) bool IsFileExists(_In_z_ _Const_ const wchar_t* _File);
+_Success_(return==true) bool IsFileExists(_In_z_ _Const_ const char* _File);

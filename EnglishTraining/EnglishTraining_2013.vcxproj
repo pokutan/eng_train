@@ -44,14 +44,14 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>c:\dev_my\bin\</OutDir>
-    <IntDir>c:\dev_my\$(ProjectName)\$(Configuration)\</IntDir>
+    <OutDir>../../bin/</OutDir>
+    <IntDir>../../bin/$(ProjectName)/$(Configuration)/</IntDir>
     <TargetName>EnglishTraining</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>c:\dev_my\bin\</OutDir>
-    <IntDir>c:\dev_my\$(ProjectName)\$(Configuration)\</IntDir>
+    <OutDir>../../bin/</OutDir>
+    <IntDir>../../bin/$(ProjectName)/$(Configuration)/</IntDir>
     <TargetName>EnglishTraining</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -61,12 +61,14 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:/dev_my/DevKD/Include;C:/dev_my/DevKD/Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../libs/Debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
       <AdditionalDependencies>
       </AdditionalDependencies>
     </Link>
@@ -90,14 +92,16 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:/dev_my/DevKD/Include;C:/dev_my/DevKD/Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>../libs/Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -110,14 +114,13 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <PostBuildEvent>
-      <Command>XCOPY $(TargetPath) ..\..\$(TargetFileName) /Y /R</Command>
+      <Command>ROBOCOPY $(OutputPath) $(HOME_DROPBOX)eng\my_app\ $(TargetFileName) /L /V</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copy to Dropbox folder</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="C:\dev_my\DevKD\Common\UT_String.h" />
     <ClInclude Include="EnglishTraining.h" />
     <ClInclude Include="EnglishTrainingDlg.h" />
     <ClInclude Include="gen_random.h" />
@@ -126,13 +129,13 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="C:\dev_my\DevKD\Common\UT_String.cpp" />
     <ClCompile Include="EnglishTraining.cpp" />
     <ClCompile Include="EnglishTrainingDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="UT_String.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="EnglishTraining.rc" />
