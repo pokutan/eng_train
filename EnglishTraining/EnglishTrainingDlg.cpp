@@ -338,15 +338,16 @@ void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
         Stat_Result.SetWindowTextW(s.c_str());
         return;
     }
-    wstring src;
-    SourceWord.GetWindowTextW(&src[0],MAX_PATH);
-    if(src == compare_to.c_str()){
+    wchar_t ss[MAX_PATH]={};
+    SourceWord.GetWindowTextW(ss, MAX_PATH);
+    if(compare_to == ss){
         ShowWindow(SW_HIDE);
+        wstring src(ss);
         src += L" - ";
         src += curr_translation;
         PrevTranslation.SetWindowTextW(src.c_str());
         if(_opt.to() != -1)
-            _my_timer = SetTimer(1,_opt.to(),NULL);
+            _my_timer = SetTimer(1,_opt.to(), NULL);
         try_counter = 1;
         i = 0;
     }else{
@@ -365,7 +366,7 @@ void CEnglishTrainingDlg::OnCbnSelchangeComboTo(){
 }
 
 void CEnglishTrainingDlg::OnBnClickedBtnEditfile(){
-    ::ShellExecuteA(m_hWnd,"edit",_source_file,NULL,NULL,SW_SHOWNA);
+    ::ShellExecuteA(m_hWnd, "edit", _source_file, NULL, NULL, SW_SHOWNA);
 }
 
 void CEnglishTrainingDlg::OnBnClickedBtnReload(){
