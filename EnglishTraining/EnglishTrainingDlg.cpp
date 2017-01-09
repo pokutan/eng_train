@@ -182,7 +182,7 @@ BOOL CEnglishTrainingDlg::OnInitDialog(){
         if(!IsFileExists(_source_file))
             strcpy_s(_source_file,MAX_PATH,"f:\\Dropbox\\eng\\my_app\\words.txt");
     } else if(!_wcsicmp(_comp_name,L"IVANZ1-WS"))
-        strcpy_s(_source_file,MAX_PATH,IsFileExists("\\\\ivanz-tp\\eng_dropbox\\my_app\\words.txt") ? "\\\\ivanz-tp\\eng_dropbox\\my_app\\words.txt" : "C:\\dev_my\\EnglishTraining\\Release\\words.txt");
+        strcpy_s(_source_file,MAX_PATH,IsFileExists("\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words.txt") ? "\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words.txt" : "C:\\dev_my\\bin\\words.txt");
     else if(!_wcsicmp(_comp_name,L"IVANZ-TP"))
         strcpy_s(_source_file,MAX_PATH,"C:\\Private\\Dropbox\\eng\\my_app\\words.txt");
     if(!IsFileExists(_source_file)){
