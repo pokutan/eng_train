@@ -366,10 +366,12 @@ void CEnglishTrainingDlg::OnCbnSelchangeComboTo(){
 }
 
 void CEnglishTrainingDlg::OnBnClickedBtnEditfile(){
-    ::ShellExecuteA(m_hWnd, "edit", _source_file, NULL, NULL, SW_SHOWNA);
+    ShellExecuteA(m_hWnd, "edit", _source_file, NULL, NULL, SW_SHOWNA);
 }
 
 void CEnglishTrainingDlg::OnBnClickedBtnReload(){
+    Stat_Result.SetWindowTextW(_mode_learn ? L"Choose Translation" : L"Choose word from combo");
+    PrevTranslation.SetWindowTextW(L"");
     read_source_file();
     fill_ui_data(false);
     Translations.SetFocus();
@@ -417,7 +419,7 @@ void CEnglishTrainingDlg::open_url(URLS url_index_){
     }else if(url_index_ != url_vocab && _last_eng_word.length()){
         url = _urls[url_index_];
         size_t len = _last_eng_word.length() + 1;
-        new char[len];
+        s = new char[len];
         WC2MB(_last_eng_word.c_str(), s, len, CP_ACP);
         char* p = strchr(s, ',');
         if(p)*p = '\0';
