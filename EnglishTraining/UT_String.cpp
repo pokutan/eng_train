@@ -19,12 +19,14 @@ wchar_t* MB2WC(char const* _sIn, DWORD _CodePage/* = CP_ACP*/){
     delete[] ret_;
     ret_=NULL;
   }
-  return ret_; }
+  return ret_;
+}
 
 bool MB2WC(char const* _sIn, wchar_t** _sOut, DWORD _CodePage/* = CP_ACP*/){
   if(!_sOut)return false;
   *_sOut=MB2WC(_sIn,_CodePage);
-  return *_sOut!=NULL; }
+  return *_sOut!=NULL;
+}
 
 bool MB2WC(char const* _sIn, wchar_t* _sOut, size_t& _OutLen, DWORD _CodePage/* = CP_ACP*/){
   if(!_sOut || !_OutLen)return false;
@@ -59,12 +61,14 @@ char* WC2MB(wchar_t const* _sIn, DWORD _CodePage/* = CP_ACP */, int _Len/* = -1 
     delete[] ret_;
     ret_=NULL;
   }
-  return ret_; }
+  return ret_;
+}
 
 bool WC2MB(wchar_t const* _sIn, char** _sOut, DWORD _CodePage){
   if(!_sOut)return false;
   *_sOut=WC2MB(_sIn,_CodePage);
-  return *_sOut!=NULL; }
+  return (*_sOut)!=NULL;
+}
 
 bool WC2MB(wchar_t const* _sIn, char* _sOut, size_t& _OutLen, DWORD _CodePage){
   if(!_sOut || !_OutLen)return false;
@@ -79,7 +83,8 @@ bool WC2MB(wchar_t const* _sIn, char* _sOut, size_t& _OutLen, DWORD _CodePage){
   else
     _OutLen=len_+1;
   delete[] s_;
-  return r_; }
+  return r_;
+}
 
 int CompareWideCharString(const wchar_t* _s1, const wchar_t* _s2, DWORD _Len){
   int nRet=CompareStringW(LOCALE_USER_DEFAULT,NORM_IGNORECASE,_s1,_Len,_s2,_Len);
@@ -106,7 +111,8 @@ size_t MakeString(wchar_t const* _Str, wchar_t** _pVar){
     ret_--;
   }
   if(Pos_ && *Pos_)wcsncat_s(*_pVar,ret_,Pos_,_TRUNCATE);
-  return ret_; }
+  return ret_;
+}
 
 //////////////////////////////////////////////////////////////////////////
 
