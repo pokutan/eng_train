@@ -12,6 +12,9 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include <locale>
+
+using namespace std;
 
 OPTIONS::OPTIONS() {
     wchar_t opt_file[MAX_PATH]={};
@@ -275,11 +278,12 @@ void CEnglishTrainingDlg::OnTimer(UINT_PTR nIDEvent){
 
 void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
     wchar_t curr_translation[MAX_PATH]={};
-    Translations.GetWindowTextW(curr_translation,MAX_PATH);
+    size_t len = Translations.GetWindowTextW(curr_translation,MAX_PATH);
     if(!curr_translation[0])
         return;
-    for(wchar_t* p = curr_translation; *p; ++p)
-        *p = towlower(*p);
+    locale loc;
+    for(string::size_type n = 0; n < len; ++n)
+        curr_translation[n] = tolower(curr_translation[n], loc);
     MAP_IT it;
     Stat_Result.SetWindowTextW(_mode_learn ? L"Choose Translation" : L"Choose Word");
     bool is_substr = false, suggest_found = false;
