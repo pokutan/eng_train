@@ -108,7 +108,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <PostBuildEvent>
-      <Command>ROBOCOPY $(OutputPath) $(HOME_DROPBOX)eng\my_app\ $(TargetFileName) /L /V</Command>
+      <Command>ROBOCOPY $(OutputPath) $(HOME_DROPBOX)eng\my_app\ $(TargetFileName) /V</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copy to Dropbox folder</Message>
