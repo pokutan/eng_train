@@ -92,11 +92,13 @@ private:
     void fill_ui_data(_In_ bool update_prev_);
     void fill_to_combo();
     void parse_and_insert_str(wstring& ws, size_t end_ofLine_idx_, bool also_help_map_);
+    void find_and_replace(std::string& src_, char const* find_what_, char const* replace_by_);
     enum URLS{
         url_prononce = 1,
         url_webster,
         url_examples,
         url_synonym,
+        url_bbc,
         url_vocab // keep it last
     };
     void open_url(URLS url_index_);
@@ -135,4 +137,5 @@ public:
     afx_msg void OnBnClickedCheckOntop();
     afx_msg void OnBnClickedBtnPlusWord();
     afx_msg void OnBnClickedBtnSyns();
+    CButton BtnSyns;
 };
