@@ -204,8 +204,10 @@ BOOL CEnglishTrainingDlg::OnInitDialog(){
     fill_to_combo();
     if(!_mode_learn)
         OnBnClickedRadioChoose();
+#ifndef _DEBUG
     SetWindowPos(&wndTopMost,_opt.left(),_opt.top(),0,0,SWP_NOSIZE);
     CheckOnTop.SetCheck(BST_CHECKED);
+#endif
     return TRUE;
 }
 
@@ -276,6 +278,8 @@ void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
     Translations.GetWindowTextW(curr_translation,MAX_PATH);
     if(!curr_translation[0])
         return;
+    for(wchar_t* p = curr_translation; *p; ++p)
+        *p = towlower(*p);
     MAP_IT it;
     Stat_Result.SetWindowTextW(_mode_learn ? L"Choose Translation" : L"Choose Word");
     bool is_substr = false, suggest_found = false;
