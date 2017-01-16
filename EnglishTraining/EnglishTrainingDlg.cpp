@@ -12,6 +12,9 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include <locale>
+
+using namespace std;
 
 OPTIONS::OPTIONS() {
     wchar_t opt_file[MAX_PATH]={};
@@ -59,20 +62,22 @@ CEnglishTrainingDlg::CEnglishTrainingDlg(CWnd* pParent /*=NULL*/) : CDialogEx(CE
     _urls[url_prononce] = "http://howjsay.com/pronunciation-of-";
     _urls[url_webster] = "http://www.merriam-webster.com/dictionary/";
     _urls[url_examples] = "http://www.macmillandictionary.com/dictionary/british/";
+    _urls[url_bbc] = "https://www.google.com/search?q={_word_}+site%3Abbc.co.uk&oq={_word_}+site%3Abbc.co.uk&aqs=chrome..69i57.11152j0j7&sourceid=chrome&ie=UTF-8";
     _urls[url_synonym] = "http://www.thesaurus.com/browse/";
 }
 
 void CEnglishTrainingDlg::DoDataExchange(CDataExchange* pDX){
     CDialogEx::DoDataExchange(pDX);
-    DDX_Control(pDX,ID_STAT_SORCE_WORD,SourceWord);
-    DDX_Control(pDX,ID_COMBO_TRANSLATE,Translations);
-    DDX_Control(pDX,ID_STAT_RES,Stat_Result);
-    DDX_Control(pDX,ID_COMBO_TO,ComboTO);
-    DDX_Control(pDX,ID_STAT_PREV,PrevTranslation);
-    DDX_Control(pDX,IDC_RADIO1,RadioLearn);
-    DDX_Control(pDX,IDC_RADIO2,RadioChoose);
-    DDX_Control(pDX,ID_CHECK_FROM_ENG,CheckTranslateFromEng);
-    DDX_Control(pDX,ID_CHECK_ONTOP,CheckOnTop);
+    DDX_Control(pDX, ID_STAT_SORCE_WORD, SourceWord);
+    DDX_Control(pDX, ID_COMBO_TRANSLATE, Translations);
+    DDX_Control(pDX, ID_STAT_RES, Stat_Result);
+    DDX_Control(pDX, ID_COMBO_TO, ComboTO);
+    DDX_Control(pDX, ID_STAT_PREV, PrevTranslation);
+    DDX_Control(pDX, IDC_RADIO1, RadioLearn);
+    DDX_Control(pDX, IDC_RADIO2, RadioChoose);
+    DDX_Control(pDX, ID_CHECK_FROM_ENG, CheckTranslateFromEng);
+    DDX_Control(pDX, ID_CHECK_ONTOP, CheckOnTop);
+    DDX_Control(pDX, ID_BTN_SYNS, BtnSyns);
 }
 
 BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
@@ -145,6 +150,9 @@ void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_){
             PrevTranslation.SetWindowTextW(s.c_str());
         }
         _curr_pair = *it;
+        it = _syns.find(_curr_pair.first);
+        BtnSyns.EnableWindow(it != _syns.end());
+
     }else
         _curr_pair = MAP_PAIR(L"", L"");
     ActivateKeyboardLayout(_mode_learn ? (_rus2eng_learn ? _rus_kbd : _eng_kbd) : (!_opt._static_data._vocab_from_rus2eng ? _rus_kbd : _eng_kbd), KLF_SETFORPROCESS);
@@ -191,7 +199,7 @@ BOOL CEnglishTrainingDlg::OnInitDialog(){
     }
     OutputDebugStringA(_source_file);
     read_source_file();
-    _mode_learn = (_opt.regime() == _opt.OPTIONS::A::APP_REGIME::_study_) ? true : false;
+    _mode_learn = (_opt.regime() == OPTIONS::A::APP_REGIME::_study_) ? true : false;
     if(_mode_learn)
         OnBnClickedRadioLearn();
     else
@@ -199,8 +207,10 @@ BOOL CEnglishTrainingDlg::OnInitDialog(){
     fill_to_combo();
     if(!_mode_learn)
         OnBnClickedRadioChoose();
+#ifndef _DEBUG
     SetWindowPos(&wndTopMost,_opt.left(),_opt.top(),0,0,SWP_NOSIZE);
     CheckOnTop.SetCheck(BST_CHECKED);
+#endif
     return TRUE;
 }
 
@@ -268,9 +278,12 @@ void CEnglishTrainingDlg::OnTimer(UINT_PTR nIDEvent){
 
 void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
     wchar_t curr_translation[MAX_PATH]={};
-    Translations.GetWindowTextW(curr_translation,MAX_PATH);
+    size_t len = Translations.GetWindowTextW(curr_translation,MAX_PATH);
     if(!curr_translation[0])
         return;
+    locale loc;
+    for(string::size_type n = 0; n < len; ++n)
+        curr_translation[n] = tolower(curr_translation[n], loc);
     MAP_IT it;
     Stat_Result.SetWindowTextW(_mode_learn ? L"Choose Translation" : L"Choose Word");
     bool is_substr = false, suggest_found = false;
@@ -404,6 +417,26 @@ void CEnglishTrainingDlg::OnBnClickedRadioLearn(){
     fill_ui_data(true);
 }
 
+void CEnglishTrainingDlg::find_and_replace(std::string& src_, char const* find_what_, char const* replace_by_){
+    //ASSERT(find != NULL);
+    //ASSERT(replace != NULL);
+    size_t findLen = strlen(find_what_);
+    size_t replaceLen = strlen(replace_by_);
+    size_t pos = 0;
+
+    //search for the next occurrence of find within source
+    while((pos = src_.find(find_what_, pos)) != std::string::npos)
+    {
+        //replace the found string with the replacement
+        src_.replace(pos, findLen, replace_by_);
+
+        //the next line keeps you from searching your replace string, 
+        //so your could replace "hello" with "hello world" 
+        //and not have it blow chunks.
+        pos += replaceLen;
+    }
+}
+
 void CEnglishTrainingDlg::open_url(URLS url_index_){
     if(url_index_ < url_vocab && !_curr_pair.first.length())
         return;
@@ -416,17 +449,22 @@ void CEnglishTrainingDlg::open_url(URLS url_index_){
         WC2MB(_curr_pair.first.c_str(), s, len, CP_ACP);
         url += s;
         delete[] s;
-    }else if(url_index_ != url_vocab && _last_eng_word.length()){
-        url = _urls[url_index_];
-        size_t len = _last_eng_word.length() + 1;
-        s = new char[len];
-        WC2MB(_last_eng_word.c_str(), s, len, CP_ACP);
-        char* p = strchr(s, ',');
-        if(p)*p = '\0';
-        if(p = strchr(s, '('))*p = '\0';
-        if(p = strchr(s, ' '))*p = '\0';
-        url += s;
-        delete[] s;
+    }else if(url_index_ != url_vocab){
+        if(_last_eng_word.length()){
+            size_t len = _last_eng_word.length() + 1;
+            s = new char[len];
+            WC2MB(_last_eng_word.c_str(), s, len, CP_ACP);
+            char* p = strchr(s, ',');
+            if(p)*p = '\0';
+            if(p = strchr(s, '('))*p = '\0';
+            if(p = strchr(s, ' '))*p = '\0';
+            url = _urls[url_index_];
+            if(url_index_ != url_bbc)
+                url += s;
+            else
+                find_and_replace(url, "{_word_}", s);
+            delete[] s;
+        }
     }else
         url = _urls[url_index_];
     if(url.length())
@@ -479,7 +517,7 @@ void CEnglishTrainingDlg::OnDblclkStatPrev(){ open_url(url_examples); }
 
 void CEnglishTrainingDlg::OnStnDblclickStatRes(){ open_url(url_examples); }
 
-void CEnglishTrainingDlg::OnStnDblclickStatSorceWord(){ /*open_url(url_examples);*/ }
+void CEnglishTrainingDlg::OnStnDblclickStatSorceWord(){ open_url(url_bbc); }
 
 void CEnglishTrainingDlg::OnActivate(UINT nState,CWnd* pWndOther,BOOL bMinimized){
     CDialogEx::OnActivate(nState,pWndOther,bMinimized);
