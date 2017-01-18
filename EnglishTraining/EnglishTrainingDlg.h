@@ -67,6 +67,7 @@ private:
     WORDS_MAP _syns;
     MAP_PAIR _curr_pair;
     char _source_file[MAX_PATH];
+    bool _random_pair;
     void read_source_file();
     void fill_combo(int rus_);
     MAP_IT get_random_pair(_In_ bool main_dict_){
@@ -80,14 +81,27 @@ private:
 //        static bool f = false;
 //        if(f){ return _most_active_words_map.find(L"help"); }
 //        f=true;
-        auto _get_ = [&](map<wstring, wstring>& words_)->MAP_IT{
+        auto _get_rnd_ = [&](map<wstring, wstring>& words_)->MAP_IT{
             _rnd->set_range(0, words_.size());
             int r = _rnd->rand();
             MAP_IT it = words_.begin();
             for(int i = 0; i < r; ++i)++it;
             return it;
         };
-        return (!main_dict_ && _most_active_words_map.size()) ? _get_(_most_active_words_map) : _get_(_words_map);
+        auto _get_next_ = [&](_In_ bool main_map_)->MAP_IT{
+            static MAP_IT it_main = _words_map.begin(), it_most = _most_active_words_map.begin();
+            if(!main_map_ && !_most_active_words_map.size())
+                main_map_ = true;
+            if(main_map_){
+                if(it_main == _words_map.end())
+                    it_main = _words_map.begin();
+                return it_main++;
+            }
+            if(it_most == _most_active_words_map.end())
+                it_most = _most_active_words_map.begin();
+            return it_most++;
+        };
+        return _random_pair ? ((!main_dict_ && _most_active_words_map.size()) ? _get_rnd_(_most_active_words_map) : _get_rnd_(_words_map)) : _get_next_(main_dict_);
     }
     void fill_ui_data(_In_ bool update_prev_);
     void fill_to_combo();
@@ -138,4 +152,6 @@ public:
     afx_msg void OnBnClickedBtnPlusWord();
     afx_msg void OnBnClickedBtnSyns();
     CButton BtnSyns;
+    CButton CheckBoxRandom;
+    afx_msg void OnBnClickedCheckRandom();
 };

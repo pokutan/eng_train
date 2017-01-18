@@ -54,7 +54,7 @@ void OPTIONS::set_show_timeout(wchar_t const* to_){
             _static_data._to = it.first;
 }
 
-CEnglishTrainingDlg::CEnglishTrainingDlg(CWnd* pParent /*=NULL*/) : CDialogEx(CEnglishTrainingDlg::IDD,pParent){
+CEnglishTrainingDlg::CEnglishTrainingDlg(CWnd* pParent /*=NULL*/) : CDialogEx(CEnglishTrainingDlg::IDD,pParent), _random_pair(true){
     m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
     _rnd = new gen_random<int>;
 //    _urls[url_vocab] = "http://www.classes.ru/dictionary-english-russian-Apresyan.htm";
@@ -78,6 +78,7 @@ void CEnglishTrainingDlg::DoDataExchange(CDataExchange* pDX){
     DDX_Control(pDX, ID_CHECK_FROM_ENG, CheckTranslateFromEng);
     DDX_Control(pDX, ID_CHECK_ONTOP, CheckOnTop);
     DDX_Control(pDX, ID_BTN_SYNS, BtnSyns);
+    DDX_Control(pDX, ID_CHECK_RANDOM, CheckBoxRandom);
 }
 
 BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
@@ -105,6 +106,7 @@ BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
     ON_BN_CLICKED(ID_CHECK_ONTOP,&CEnglishTrainingDlg::OnBnClickedCheckOntop)
     ON_BN_CLICKED(ID_BTN_PLUS_WORD,&CEnglishTrainingDlg::OnBnClickedBtnPlusWord)
     ON_BN_CLICKED(ID_BTN_SYNS,&CEnglishTrainingDlg::OnBnClickedBtnSyns)
+    ON_BN_CLICKED(ID_CHECK_RANDOM, &CEnglishTrainingDlg::OnBnClickedCheckRandom)
 END_MESSAGE_MAP()
 
 void CEnglishTrainingDlg::fill_combo(int rus_){
@@ -211,6 +213,7 @@ BOOL CEnglishTrainingDlg::OnInitDialog(){
     SetWindowPos(&wndTopMost,_opt.left(),_opt.top(),0,0,SWP_NOSIZE);
     CheckOnTop.SetCheck(BST_CHECKED);
 #endif
+    CheckBoxRandom.SetCheck(BST_CHECKED);
     return TRUE;
 }
 
@@ -515,9 +518,9 @@ void CEnglishTrainingDlg::OnBnClickedCheckFromEngToRus(){
 
 void CEnglishTrainingDlg::OnDblclkStatPrev(){ open_url(url_examples); }
 
-void CEnglishTrainingDlg::OnStnDblclickStatRes(){ open_url(url_examples); }
+void CEnglishTrainingDlg::OnStnDblclickStatRes(){ open_url(url_bbc); }
 
-void CEnglishTrainingDlg::OnStnDblclickStatSorceWord(){ open_url(url_bbc); }
+void CEnglishTrainingDlg::OnStnDblclickStatSorceWord(){ /*open_url(url_bbc);*/ }
 
 void CEnglishTrainingDlg::OnActivate(UINT nState,CWnd* pWndOther,BOOL bMinimized){
     CDialogEx::OnActivate(nState,pWndOther,bMinimized);
@@ -587,3 +590,5 @@ void CEnglishTrainingDlg::OnBnClickedBtnSyns(){
             open_url(url_synonym);
     }
 }
+
+void CEnglishTrainingDlg::OnBnClickedCheckRandom(){ _random_pair = CheckBoxRandom.GetCheck() == BST_CHECKED; }
