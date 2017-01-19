@@ -33,6 +33,9 @@
     <ClInclude Include="gen_random.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="scope_guard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EnglishTraining.cpp">
