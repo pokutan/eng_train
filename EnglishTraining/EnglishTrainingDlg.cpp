@@ -27,6 +27,13 @@ OPTIONS::OPTIONS() {
     if(_cfg_file != INVALID_HANDLE_VALUE && GetLastError() == ERROR_ALREADY_EXISTS)
         if(ReadFile(_cfg_file, &_static_data, d, &d, NULL))
             SetFilePointer(_cfg_file, 0, NULL, FILE_BEGIN);
+    wcscpy_s(_static_data._all_search_urls[0], L"cnn.com");
+    wcscpy_s(_static_data._all_search_urls[1], L"nationalgeographic.com");
+    wcscpy_s(_static_data._all_search_urls[2], L"bbc.co.uk");
+    wcscpy_s(_static_data._all_search_urls[3], L"ft.com");
+    wcscpy_s(_static_data._all_search_urls[4], L"wsj.com");
+    wcscpy_s(_static_data._all_search_urls[5], L"health.com");
+    wcscpy_s(_static_data._all_search_urls[6], L"webmd.com");
 #ifdef _DEBUG
     _timeouts.insert(std::pair<int,wstring>(1*ONE_SEC, L"1"));
 #endif
@@ -54,8 +61,6 @@ void OPTIONS::set_show_timeout(wchar_t const* to_){
                 _static_data._to = it.first;
 }
 
-void OPTIONS::set_search_url(wchar_t const* url_){ if(url_ && url_[0])wcscpy_s(_static_data._search_url, MAX_PATH, url_); }
-
 CEnglishTrainingDlg::CEnglishTrainingDlg(CWnd* pParent /*=NULL*/) : CDialogEx(CEnglishTrainingDlg::IDD,pParent), _random_pair(true){
     m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
     _rnd = new gen_random<int>;
@@ -82,7 +87,7 @@ void CEnglishTrainingDlg::DoDataExchange(CDataExchange* pDX){
     DDX_Control(pDX, ID_CHECK_ONTOP, CheckOnTop);
     DDX_Control(pDX, ID_BTN_SYNS, BtnSyns);
     DDX_Control(pDX, ID_CHECK_RANDOM, CheckBoxRandom);
-    DDX_Control(pDX, ID_EDIT_SITE_URL, EditURL);
+    DDX_Control(pDX, ID_COMBO_SITE_URL, ComboSearchUrl);
 }
 
 BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
@@ -111,8 +116,7 @@ BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
     ON_BN_CLICKED(ID_BTN_PLUS_WORD,&CEnglishTrainingDlg::OnBnClickedBtnPlusWord)
     ON_BN_CLICKED(ID_BTN_SYNS,&CEnglishTrainingDlg::OnBnClickedBtnSyns)
     ON_BN_CLICKED(ID_CHECK_RANDOM, &CEnglishTrainingDlg::OnBnClickedCheckRandom)
-    ON_EN_SETFOCUS(ID_EDIT_SITE_URL, &CEnglishTrainingDlg::OnEnSetfocusEditSiteUrl)
-    ON_EN_KILLFOCUS(ID_EDIT_SITE_URL, &CEnglishTrainingDlg::OnEnKillfocusEditSiteUrl)
+    ON_CBN_KILLFOCUS(ID_COMBO_SITE_URL, &CEnglishTrainingDlg::OnCbnKillfocusComboSiteUrl)
 END_MESSAGE_MAP()
 
 void CEnglishTrainingDlg::fill_combo(int rus_){
@@ -220,7 +224,9 @@ BOOL CEnglishTrainingDlg::OnInitDialog(){
     CheckOnTop.SetCheck(BST_CHECKED);
 #endif
     CheckBoxRandom.SetCheck(BST_CHECKED);
-    EditURL.SetWindowTextW(_opt.url());
+    for(int i = 0; _opt._static_data._all_search_urls[i][0]; ++i)
+        ComboSearchUrl.AddString(_opt._static_data._all_search_urls[i]);
+    ComboSearchUrl.SetCurSel(0);
     return TRUE;
 }
 
@@ -325,7 +331,7 @@ void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
         if((it = _words_map.find(curr_translation)) == _words_map.end())
             // look for a substring
             for(it = _words_map.begin(); it != _words_map.end(); ++it)
-                if((is_substr = (wcslen(curr_translation) >= 3 && (wcsstr(it->first.c_str(),curr_translation) != NULL) && (it->first != curr_translation)))){
+                if((is_substr = (wcslen(curr_translation) >= 3 && (wcsstr(it->first.c_str(), curr_translation) != NULL) && (it->first != curr_translation)))){
                     compare_to = it->second;
                     substr_full_transl = it->first;
                     suggest_found = true;
@@ -350,7 +356,7 @@ void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
         return;
     }
     if(is_substr && substr_full_transl.length() && suggest_found){
-        Translations.SetCurSel(Translations.FindString(0,substr_full_transl.c_str()));
+        Translations.SetCurSel(Translations.FindString(0, substr_full_transl.c_str()));
         if(_mode_learn)
             return;
     }
@@ -472,9 +478,11 @@ void CEnglishTrainingDlg::open_url(URLS url_index_){
             if(url_index_ != url_bbc)
                 url += s;
             else{
+                wchar_t url_w[MAX_PATH]={};
                 char url_a[MAX_PATH]={};
                 size_t n = MAX_PATH;
-                if(!WC2MB(_opt.url(), url_a, n, CP_ACP))
+                ComboSearchUrl.GetWindowTextW(url_w, MAX_PATH);
+                if(!WC2MB(url_w, url_a, n, CP_ACP))
                     return;
                 find_and_replace(url, "_{site}_", url_a);
                 find_and_replace(url, "{_word_}", s);
@@ -520,6 +528,13 @@ void CEnglishTrainingDlg::OnDestroy(){
     _opt._static_data._left = rc.left;
     _opt._static_data._top = rc.top;
     _opt._static_data._regime = _mode_learn ? OPTIONS::A::APP_REGIME::_study_ : OPTIONS::A::APP_REGIME::_vocab_;
+    for(int i = 0; i < 20; ++i){
+        if(!ComboSearchUrl.GetCount())
+            break;
+        ComboSearchUrl.SetCurSel(0);
+        ComboSearchUrl.GetWindowTextW(_opt._static_data._all_search_urls[i], MAX_PATH);
+        ComboSearchUrl.DeleteString(0);
+    }
 }
 
 void CEnglishTrainingDlg::OnBnClickedBtnDict(){ open_url(url_vocab); }
@@ -604,28 +619,31 @@ void CEnglishTrainingDlg::OnBnClickedBtnSyns(){
 
 void CEnglishTrainingDlg::OnBnClickedCheckRandom(){ _random_pair = CheckBoxRandom.GetCheck() == BST_CHECKED; }
 
-void CEnglishTrainingDlg::OnEnSetfocusEditSiteUrl(){
-    EditURL.SetWindowTextW(L"");
-    ActivateKeyboardLayout(_eng_kbd, KLF_SETFORPROCESS);
-}
-
-void CEnglishTrainingDlg::OnEnKillfocusEditSiteUrl(){
-    auto a = generic_guard::make_scope_exit([&](){
-        ActivateKeyboardLayout(_mode_learn ? (_rus2eng_learn ? _rus_kbd : _eng_kbd) : (!_opt._static_data._vocab_from_rus2eng ? _rus_kbd : _eng_kbd), KLF_SETFORPROCESS); });
-    wchar_t s[MAX_PATH]={};
-    if(!EditURL.GetWindowTextW(s, MAX_PATH)){
-        EditURL.SetWindowTextW(_opt.url());
-        return;
-    }
-    // trim possible prefixes: http, //, www...
-    wchar_t* p = wcsstr(s, L"www.");
-    if(p)p += 4;
-    else if(p = wcsstr(s, L"://"))p += 3;
-    else p = s;
-    if(!wcschr(p, L'.')){
-        EditURL.SetWindowTextW(_opt.url());
-        return;
-    }
-    EditURL.SetWindowTextW(p);
-    _opt.set_search_url(p);
+void CEnglishTrainingDlg::OnCbnKillfocusComboSiteUrl(){
+    //ActivateKeyboardLayout(_eng_kbd, KLF_SETFORPROCESS);
+    //auto a = generic_guard::make_scope_exit([&](){
+    //    ActivateKeyboardLayout(_mode_learn ? (_rus2eng_learn ? _rus_kbd : _eng_kbd) : (!_opt._static_data._vocab_from_rus2eng ? _rus_kbd : _eng_kbd), KLF_SETFORPROCESS); });
+    //wchar_t s[MAX_PATH]={};
+    //if(!ComboSearchUrl.GetWindowTextW(s, MAX_PATH)){
+    //    ComboSearchUrl.DeleteString(ComboSearchUrl.FindStringExact(0, _opt.url()));
+    //    ComboSearchUrl.SetCurSel(0);
+    //    if(ComboSearchUrl.GetWindowTextW(s, MAX_PATH))
+    //        _opt.set_search_url(s);
+    //    return;
+    //}
+    //// trim possible prefixes: http, //, www...
+    //wchar_t* p = wcsstr(s, L"www.");
+    //if(p)p += 4;
+    //else if(p = wcsstr(s, L"://"))p += 3;
+    //else p = s;
+    //if(!wcschr(p, L'.')){
+    //    EditURL.SetWindowTextW(_opt.url());
+    //    return;
+    //}
+    //int index = ComboSearchUrl.FindString(0, p);
+    //if(index > -1)
+    //    ComboSearchUrl.SetCurSel(index);
+    //else
+    //    ComboSearchUrl.SetCurSel(ComboSearchUrl.AddString(p));
+    //_opt.set_search_url(p);
 }

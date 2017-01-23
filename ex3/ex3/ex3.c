@@ -1,6 +1,7 @@
 /* Uncomment this define while compiling under MS Visual Studio
 #define _CRT_SECURE_NO_WARNINGS
 */
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <stdio.h>
 

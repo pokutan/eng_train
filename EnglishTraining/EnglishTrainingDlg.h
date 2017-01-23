@@ -16,20 +16,18 @@ struct OPTIONS{
         size_t _to;
         int _vocab_from_rus2eng;
         enum APP_REGIME{ _study_ = 1, _vocab_ }_regime;
-        wchar_t _search_url[MAX_PATH];
-        A() : _left(50), _top(100), _to(60*ONE_SEC), _regime(_study_){ wcscpy_s(_search_url, MAX_PATH, L"cnn.com"); }
+        wchar_t _all_search_urls[20][MAX_PATH];
+        A() : _left(50), _top(100), _to(60*ONE_SEC), _regime(_study_){ ZeroMemory(_all_search_urls, 20 * MAX_PATH * sizeof(wchar_t)); }
     }_static_data;
     long left()const{ return _static_data._left; }
     long top()const{ return _static_data._top; }
     size_t to()const{ return _static_data._to; }
-    wchar_t const* url()const{ return _static_data._search_url; }
     A::APP_REGIME regime()const{ return _static_data._regime; }
     map<int, wstring> _timeouts;
     HANDLE _cfg_file;
     OPTIONS();
     ~OPTIONS();
     void set_show_timeout(wchar_t const* to_);
-    void set_search_url(wchar_t const* url_);
 };
 
 // CEnglishTrainingDlg dialog
@@ -157,7 +155,6 @@ public:
     CButton BtnSyns;
     CButton CheckBoxRandom;
     afx_msg void OnBnClickedCheckRandom();
-    CEdit EditURL;
-    afx_msg void OnEnSetfocusEditSiteUrl();
-    afx_msg void OnEnKillfocusEditSiteUrl();
+    CComboBox ComboSearchUrl;
+    afx_msg void OnCbnKillfocusComboSiteUrl();
 };
