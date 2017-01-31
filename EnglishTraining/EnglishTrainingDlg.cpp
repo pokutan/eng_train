@@ -8,7 +8,7 @@
     #define new DEBUG_NEW
 #endif
 
-#include "scope_guard.h"
+//#include "scope_guard.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -144,6 +144,13 @@ void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_){
     wstring s;
     if(_mode_learn)
         _rus2eng_learn = gr;
+    else{
+        MAP_IT it = get_random_pair(true);
+        wstring s(it->first);
+        s += L" - ";
+        s += it->second;
+        Stat_Result.SetWindowTextW(s.c_str());
+    }
 //    _rus2eng_learn = 1;
     fill_combo(_mode_learn ? !_rus2eng_learn : _opt._static_data._vocab_from_rus2eng);
     if(_mode_learn){
@@ -296,11 +303,16 @@ void CEnglishTrainingDlg::OnTimer(UINT_PTR nIDEvent){
         fill_ui_data(true);
         ShowWindow(SW_SHOW);
     }else if(nIDEvent == _vocab_auto_timer){
-        MAP_IT it = get_random_pair(true);
-        wstring s(it->first);
-        s += L" - ";
-        s += it->second;
-        Stat_Result.SetWindowTextW(s.c_str());
+        if(!_mode_learn){
+            MAP_IT it = get_random_pair(true);
+            wstring s(it->first);
+            s += L" - ";
+            s += it->second;
+            Stat_Result.SetWindowTextW(s.c_str());
+        }else{
+            KillTimer(_vocab_auto_timer);
+            _vocab_auto_timer = -1;
+        }
     }
     CDialogEx::OnTimer(nIDEvent);
 }
@@ -573,12 +585,21 @@ void CEnglishTrainingDlg::OnBnClickedCheckFromEngToRus(){
 
 void CEnglishTrainingDlg::OnBnClickedCheckAuto(){
     _opt._static_data._vocab_auto = (CheckBoxAuto.GetCheck() == BST_CHECKED) ? 1 : 0;
+    if(_mode_learn)
+        return;
     if(_opt._static_data._vocab_auto){
         ASSERT(_vocab_auto_timer == -1);
-        if(_opt.to() != -1)
+        if(_opt.to() != -1){
+            MAP_IT it = get_random_pair(true);
+            wstring s(it->first);
+            s += L" - ";
+            s += it->second;
+            Stat_Result.SetWindowTextW(s.c_str());
             _vocab_auto_timer = SetTimer(2, _opt.to(), NULL);
+        }
     }else{
         ASSERT(_vocab_auto_timer != -1);
+        Stat_Result.SetWindowTextW(L"Choose word from combo");
         KillTimer(_vocab_auto_timer);
         _vocab_auto_timer = -1;
     }
