@@ -129,6 +129,49 @@ void MaxSet(int arr[], int size){
     printf("maximum sequence length = %d\n", res);
 }
 
+/* task 4 - divide by 3 */
+
+#define MAX_NUM_STR_LEN 500
+
+int numCounter(char str[], int num, int counter){
+    if(str[0] == '\0')
+        return 0;
+    if(str[0] == num){
+        if(counter == 0)
+            counter = 1;
+        else if(counter == 1)
+            counter = 2;
+        else if(counter == 2)
+            counter = 0;
+        return numCounter(str + 1, num, counter);
+    }else
+        return numCounter(str + 1, num, counter);
+
+}
+
+int DividedBy3(char str[]){
+    if(str[0] == '\0')
+        return 0;
+    int num1 = 0, num2 = 0;
+    /* counts how many times the digit '1' appears in number*/
+    num1 = numCounter(str, '1', 0);
+    /* counts how many times the digit '2' appears in number*/
+    num2 = numCounter(str, '2', 0);
+    if((num1 == 0 && num2 == 0) || (num1 == 1 && num2 == 1) || (num1 == 2 && num2 == 2))
+        return 1;
+    else
+        return 0;
+    /*
+    if the func numCounter returned 0 on both checks, the number divides.
+    if the func numCounter returned 1 on both checks, the number divides.
+    if the func numCounter returned 1 on one of the checks, and 0 on the other, the number DOESN'T divide.
+
+    if the func numCounter returned 2 on one check, and 0 on the other, the number DOESN'T divide.
+    if the func numCounter returned 2 on one check, and 1 one the other, the number DOESN'T divide.
+    if the func numCounter returned 2 on both checks, the number divides.
+    */
+}
+
 int main(){
     /* 1 */
     char strings_array[] = { "abc,ABC,EdF" };
@@ -137,5 +180,18 @@ int main(){
     int arr[MAX_ARRAY_LEN];
     int Len = SetupArray(arr, MAX_ARRAY_LEN);
     MaxSet(arr, Len);
+    /* 4 */
+    printf("Check whether number is dividable by 3\n");
+    char num_str[MAX_NUM_STR_LEN];
+    for(int i = 0; i < MAX_NUM_STR_LEN; ++i)
+        num_str[i] = '\0';
+    int n = -1;
+    for(int i = 0; i < MAX_NUM_STR_LEN && n != 0; ++i){
+        printf("Enter next number or 0 to finish input\n");
+        scanf("%d", &n);
+        if(n > 0 && n < 4 )
+            num_str[i] = (char)n;
+    }
+    printf("%s %s dividable by 3\n", num_str, DividedBy3(num_str) == 1 ? "is" : "is not");
     return 0;
 }

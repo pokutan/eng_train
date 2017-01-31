@@ -474,6 +474,7 @@ void CEnglishTrainingDlg::open_url(URLS url_index_){
             if(p)*p = '\0';
             if(p = strchr(s, '('))*p = '\0';
             if(p = strchr(s, ' '))*p = '\0';
+            if(p = strchr(s, '-'))*p = '\0';
             url = _urls[url_index_];
             if(url_index_ != url_bbc)
                 url += s;
