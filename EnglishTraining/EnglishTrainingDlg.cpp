@@ -61,7 +61,7 @@ void OPTIONS::set_show_timeout(wchar_t const* to_){
                 _static_data._to = it.first;
 }
 
-CEnglishTrainingDlg::CEnglishTrainingDlg(CWnd* pParent /*=NULL*/) : CDialogEx(CEnglishTrainingDlg::IDD,pParent), _random_pair(true){
+CEnglishTrainingDlg::CEnglishTrainingDlg(CWnd* pParent /*=NULL*/) : CDialogEx(CEnglishTrainingDlg::IDD,pParent), _random_pair(true), _my_timer(-1), _vocab_auto_timer(-1){
     m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
     _rnd = new gen_random<int>;
 //    _urls[url_vocab] = "http://www.classes.ru/dictionary-english-russian-Apresyan.htm";
@@ -88,6 +88,7 @@ void CEnglishTrainingDlg::DoDataExchange(CDataExchange* pDX){
     DDX_Control(pDX, ID_BTN_SYNS, BtnSyns);
     DDX_Control(pDX, ID_CHECK_RANDOM, CheckBoxRandom);
     DDX_Control(pDX, ID_COMBO_SITE_URL, ComboSearchUrl);
+    DDX_Control(pDX, ID_CHECK_AUTO, CheckBoxAuto);
 }
 
 BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
@@ -117,6 +118,7 @@ BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
     ON_BN_CLICKED(ID_BTN_SYNS,&CEnglishTrainingDlg::OnBnClickedBtnSyns)
     ON_BN_CLICKED(ID_CHECK_RANDOM, &CEnglishTrainingDlg::OnBnClickedCheckRandom)
     ON_CBN_KILLFOCUS(ID_COMBO_SITE_URL, &CEnglishTrainingDlg::OnCbnKillfocusComboSiteUrl)
+    ON_BN_CLICKED(ID_CHECK_AUTO, &CEnglishTrainingDlg::OnBnClickedCheckAuto)
 END_MESSAGE_MAP()
 
 void CEnglishTrainingDlg::fill_combo(int rus_){
@@ -136,6 +138,8 @@ void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_){
     }
     if(_opt._static_data._vocab_from_rus2eng)
         CheckTranslateFromEng.SetCheck(BST_CHECKED);
+    if(_opt._static_data._vocab_auto)
+        CheckBoxAuto.SetCheck(BST_CHECKED);
     static gen_random<int> gr(0,2);
     wstring s;
     if(_mode_learn)
@@ -286,9 +290,18 @@ void CEnglishTrainingDlg::read_source_file(){
 }
 
 void CEnglishTrainingDlg::OnTimer(UINT_PTR nIDEvent){
-    KillTimer(_my_timer);
-    fill_ui_data(true);
-    ShowWindow(SW_SHOW);
+    if(nIDEvent == _my_timer){
+        KillTimer(_my_timer);
+        _my_timer = -1;
+        fill_ui_data(true);
+        ShowWindow(SW_SHOW);
+    }else if(nIDEvent == _vocab_auto_timer){
+        MAP_IT it = get_random_pair(true);
+        wstring s(it->first);
+        s += L" - ";
+        s += it->second;
+        Stat_Result.SetWindowTextW(s.c_str());
+    }
     CDialogEx::OnTimer(nIDEvent);
 }
 
@@ -376,7 +389,7 @@ void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
         src += curr_translation;
         PrevTranslation.SetWindowTextW(src.c_str());
         if(_opt.to() != -1)
-            _my_timer = SetTimer(1,_opt.to(), NULL);
+            _my_timer = SetTimer(1, _opt.to(), NULL);
         try_counter = 1;
         i = 0;
     }else{
@@ -392,6 +405,10 @@ void CEnglishTrainingDlg::OnCbnSelchangeComboTo(){
     wchar_t s[10]={};
     ComboTO.GetWindowTextW(s, 10);
     _opt.set_show_timeout(s);
+    if(_vocab_auto_timer != -1){
+        KillTimer(_vocab_auto_timer);
+        _vocab_auto_timer = SetTimer(2, _opt.to(), NULL);
+    }
 }
 
 void CEnglishTrainingDlg::OnBnClickedBtnEditfile(){
@@ -409,6 +426,12 @@ void CEnglishTrainingDlg::OnBnClickedBtnReload(){
 void CEnglishTrainingDlg::OnBnClickedRadioChoose(){
     CheckRadioButton(IDC_RADIO1,IDC_RADIO2,IDC_RADIO2);
     CheckTranslateFromEng.EnableWindow(TRUE);
+    CheckBoxAuto.EnableWindow(TRUE);
+    if(_opt._static_data._vocab_auto){
+        ASSERT(_vocab_auto_timer == -1);
+        if(_opt.to() != -1)
+            _vocab_auto_timer = SetTimer(2, _opt.to(), NULL);
+    }
     if(CWnd* edit_combo = Translations.GetWindow(GW_CHILD)){
         Translations.ModifyStyle(CBS_DROPDOWN, CBS_DROPDOWNLIST);
         edit_combo->SendMessage(EM_SETREADONLY ,TRUE ,0);
@@ -423,6 +446,7 @@ void CEnglishTrainingDlg::OnBnClickedRadioChoose(){
 void CEnglishTrainingDlg::OnBnClickedRadioLearn(){
     CheckRadioButton(IDC_RADIO1,IDC_RADIO2,IDC_RADIO1);
     CheckTranslateFromEng.EnableWindow(FALSE);
+    CheckBoxAuto.EnableWindow(FALSE);
     if(CWnd* edit_combo = Translations.GetWindow(GW_CHILD)){
         Translations.ModifyStyle(CBS_DROPDOWNLIST, CBS_DROPDOWN);
         edit_combo->SendMessage(EM_SETREADONLY, FALSE, 0);
@@ -521,6 +545,8 @@ void CEnglishTrainingDlg::OnBnClickedBtnSetFile(){
 
 void CEnglishTrainingDlg::OnDestroy(){
     CDialogEx::OnDestroy();
+    if(_my_timer != -1)KillTimer(_my_timer);
+    if(-_vocab_auto_timer != -1)KillTimer(_vocab_auto_timer);
     if(_rnd)delete _rnd;
     //UnloadKeyboardLayout(_eng_kbd);
     //UnloadKeyboardLayout(_rus_kbd);
@@ -543,6 +569,19 @@ void CEnglishTrainingDlg::OnBnClickedBtnDict(){ open_url(url_vocab); }
 void CEnglishTrainingDlg::OnBnClickedCheckFromEngToRus(){
     _opt._static_data._vocab_from_rus2eng = (CheckTranslateFromEng.GetCheck() == BST_CHECKED) ? 1 : 0;
     fill_ui_data(true);
+}
+
+void CEnglishTrainingDlg::OnBnClickedCheckAuto(){
+    _opt._static_data._vocab_auto = (CheckBoxAuto.GetCheck() == BST_CHECKED) ? 1 : 0;
+    if(_opt._static_data._vocab_auto){
+        ASSERT(_vocab_auto_timer == -1);
+        if(_opt.to() != -1)
+            _vocab_auto_timer = SetTimer(2, _opt.to(), NULL);
+    }else{
+        ASSERT(_vocab_auto_timer != -1);
+        KillTimer(_vocab_auto_timer);
+        _vocab_auto_timer = -1;
+    }
 }
 
 void CEnglishTrainingDlg::OnDblclkStatPrev(){ open_url(url_examples); }

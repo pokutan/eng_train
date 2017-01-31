@@ -14,7 +14,7 @@ struct OPTIONS{
     struct A{
         long _left, _top;
         size_t _to;
-        int _vocab_from_rus2eng;
+        int _vocab_from_rus2eng, _vocab_auto;
         enum APP_REGIME{ _study_ = 1, _vocab_ }_regime;
         wchar_t _all_search_urls[20][MAX_PATH];
         A() : _left(50), _top(100), _to(60*ONE_SEC), _regime(_study_){ ZeroMemory(_all_search_urls, 20 * MAX_PATH * sizeof(wchar_t)); }
@@ -117,7 +117,7 @@ private:
         url_vocab // keep it last
     };
     void open_url(URLS url_index_);
-    int _my_timer;
+    int _my_timer, _vocab_auto_timer;
     int _rus2eng_learn;
     wstring _text_err, _curr_right_transl;
     wstring _last_eng_word;
@@ -129,7 +129,8 @@ private:
 public:
     CStatic SourceWord, Stat_Result, PrevTranslation;
     CComboBox Translations, ComboTO;
-    CButton RadioLearn, RadioChoose, CheckTranslateFromEng, CheckOnTop;
+    CButton RadioLearn, RadioChoose, CheckTranslateFromEng, CheckOnTop, BtnSyns, CheckBoxRandom, CheckBoxAuto;
+    CComboBox ComboSearchUrl;
     afx_msg void OnTimer(UINT_PTR nIDEvent);
     afx_msg void OnBnClickedBtnSubmit();
     afx_msg void OnCbnSelchangeComboTo();
@@ -152,9 +153,7 @@ public:
     afx_msg void OnBnClickedCheckOntop();
     afx_msg void OnBnClickedBtnPlusWord();
     afx_msg void OnBnClickedBtnSyns();
-    CButton BtnSyns;
-    CButton CheckBoxRandom;
     afx_msg void OnBnClickedCheckRandom();
-    CComboBox ComboSearchUrl;
     afx_msg void OnCbnKillfocusComboSiteUrl();
+    afx_msg void OnBnClickedCheckAuto();
 };
