@@ -61,6 +61,8 @@ void OPTIONS::set_show_timeout(wchar_t const* to_){
                 _static_data._to = it.first;
 }
 
+void OPTIONS::set_rand(bool rand_){ _static_data._is_random = rand_ ? 1 : 0; }
+
 CEnglishTrainingDlg::CEnglishTrainingDlg(CWnd* pParent /*=NULL*/) : CDialogEx(CEnglishTrainingDlg::IDD,pParent), _random_pair(true), _my_timer(-1), _vocab_auto_timer(-1){
     m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
     _rnd = new gen_random<int>;
@@ -89,6 +91,12 @@ void CEnglishTrainingDlg::DoDataExchange(CDataExchange* pDX){
     DDX_Control(pDX, ID_CHECK_RANDOM, CheckBoxRandom);
     DDX_Control(pDX, ID_COMBO_SITE_URL, ComboSearchUrl);
     DDX_Control(pDX, ID_CHECK_AUTO, CheckBoxAuto);
+    DDX_Control(pDX, ID_BTN_CLEAR_WORD, BtnForgetWord);
+    DDX_Control(pDX, ID_BTN_PLUS_WORD, BtnAddWord);
+    DDX_Control(pDX, ID_BTN_PRONON, BtnPrononc);
+    DDX_Control(pDX, ID_BTN_EXAMP, BtnVocabWebster);
+    DDX_Control(pDX, ID_BTN_DICT, BtnVocabMueller);
+    DDX_Control(pDX, ID_BTN_PAUSE, BtnPauseContinue);
 }
 
 BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
@@ -99,7 +107,7 @@ BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
     ON_CBN_SELCHANGE(ID_COMBO_TO,&CEnglishTrainingDlg::OnCbnSelchangeComboTo)
     ON_BN_CLICKED(ID_BTN_EDITFILE,&CEnglishTrainingDlg::OnBnClickedBtnEditfile)
     ON_BN_CLICKED(ID_BTN_RELOAD,&CEnglishTrainingDlg::OnBnClickedBtnReload)
-    ON_BN_CLICKED(IDC_RADIO2,&CEnglishTrainingDlg::OnBnClickedRadioChoose)
+    ON_BN_CLICKED(IDC_RADIO2,&CEnglishTrainingDlg::OnBnClickedRadioVocab)
     ON_BN_CLICKED(IDC_RADIO1,&CEnglishTrainingDlg::OnBnClickedRadioLearn)
     ON_BN_CLICKED(ID_BTN_PRONON,&CEnglishTrainingDlg::OnBnClickedBtnPrononce)
     ON_BN_CLICKED(ID_BTN_EXAMP,&CEnglishTrainingDlg::OnBnClickedBtnExamp)
@@ -119,6 +127,7 @@ BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
     ON_BN_CLICKED(ID_CHECK_RANDOM, &CEnglishTrainingDlg::OnBnClickedCheckRandom)
     ON_CBN_KILLFOCUS(ID_COMBO_SITE_URL, &CEnglishTrainingDlg::OnCbnKillfocusComboSiteUrl)
     ON_BN_CLICKED(ID_CHECK_AUTO, &CEnglishTrainingDlg::OnBnClickedCheckAuto)
+    ON_BN_CLICKED(ID_BTN_PAUSE, &CEnglishTrainingDlg::OnBnClickedBtnPause)
 END_MESSAGE_MAP()
 
 void CEnglishTrainingDlg::fill_combo(int rus_){
@@ -162,7 +171,15 @@ void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_){
                 base_map = false;
             }
         }
-        MAP_IT it = get_random_pair(base_map);
+        MAP_CIT it = _words_map.begin();
+        if(_random_pair)
+            it = get_random_pair(base_map);
+        else{
+            if(_it_lasting == _words_map.end())
+                _it_lasting = _words_map.begin();
+            it = _it_lasting;
+            ++_it_lasting;
+        }
         SourceWord.SetWindowText(_rus2eng_learn ? it->first.c_str() : it->second.c_str());
         _curr_right_transl = !_rus2eng_learn ? it->first : it->second;
         Stat_Result.SetWindowTextW(L"Choose Translation");
@@ -209,35 +226,39 @@ BOOL CEnglishTrainingDlg::OnInitDialog(){
     DWORD d = MAX_PATH;
     GetComputerNameW(_comp_name,&d);
     if(!_wcsicmp(_comp_name,L"pokutan")){
-        strcpy_s(_source_file,MAX_PATH,"F:\\Dropbox\\eng\\my_app\\words.txt");
+        strcpy_s(_source_file, MAX_PATH, "F:\\Dropbox\\eng\\my_app\\words.txt");
         if(!IsFileExists(_source_file))
-            strcpy_s(_source_file,MAX_PATH,"f:\\Dropbox\\eng\\my_app\\words.txt");
-    } else if(!_wcsicmp(_comp_name,L"IVANZ1-WS"))
-        strcpy_s(_source_file,MAX_PATH,IsFileExists("\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words.txt") ? "\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words.txt" : "C:\\dev_my\\bin\\words.txt");
-    else if(!_wcsicmp(_comp_name,L"IVANZ-TP"))
-        strcpy_s(_source_file,MAX_PATH,"C:\\Private\\Dropbox\\eng\\my_app\\words.txt");
+            strcpy_s(_source_file, MAX_PATH, "f:\\Dropbox\\eng\\my_app\\words.txt");
+    }else if(!_wcsicmp(_comp_name,L"IVANZ1-WS"))
+        strcpy_s(_source_file, MAX_PATH, IsFileExists("\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words.txt") ? "\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words.txt" : "C:\\dev_my\\bin\\words.txt");
+    else if(!_wcsicmp(_comp_name, L"IVANZ-TP"))
+        strcpy_s(_source_file, MAX_PATH, "C:\\Private\\Dropbox\\eng\\my_app\\words.txt");
     if(!IsFileExists(_source_file)){
-        ::GetCurrentDirectoryA(MAX_PATH,_source_file);
-        strcat_s(_source_file,MAX_PATH,"\\words.txt");
+        ::GetCurrentDirectoryA(MAX_PATH, _source_file);
+        strcat_s(_source_file, MAX_PATH, "\\words.txt");
     }
     OutputDebugStringA(_source_file);
+#ifdef _DEBUG
+    if(IsFileExists("\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words_debug.txt"))
+        strcpy_s(_source_file, MAX_PATH, "\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words_debug.txt");
+#endif
     read_source_file();
     _mode_learn = (_opt.regime() == OPTIONS::A::APP_REGIME::_study_) ? true : false;
+    CheckBoxRandom.SetCheck(_random_pair = _opt.rand());
     if(_mode_learn)
         OnBnClickedRadioLearn();
-    else
-        fill_ui_data(true);
     fill_to_combo();
     if(!_mode_learn)
-        OnBnClickedRadioChoose();
+        OnBnClickedRadioVocab();
 #ifndef _DEBUG
     SetWindowPos(&wndTopMost, _opt.left(), _opt.top(), 0, 0, SWP_NOSIZE);
     CheckOnTop.SetCheck(BST_CHECKED);
 #endif
-    CheckBoxRandom.SetCheck(BST_CHECKED);
     for(int i = 0; _opt._static_data._all_search_urls[i][0]; ++i)
         ComboSearchUrl.AddString(_opt._static_data._all_search_urls[i]);
     ComboSearchUrl.SetCurSel(0);
+    if(!_mode_learn)
+        BtnSyns.EnableWindow(_opt._static_data._vocab_auto == 0), BtnForgetWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnAddWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnVocabWebster.EnableWindow(_opt._static_data._vocab_auto == 0), BtnPauseContinue.EnableWindow(_opt._static_data._vocab_auto == 1);
     return TRUE;
 }
 
@@ -290,6 +311,7 @@ void CEnglishTrainingDlg::read_source_file(){
                 ws = &ws[new_line_idx + 2];
             }
 //            fill_ui_data(false);
+            _it_lasting = _words_map.begin();
         }
         ifs.close();
     }
@@ -304,7 +326,23 @@ void CEnglishTrainingDlg::OnTimer(UINT_PTR nIDEvent){
         ShowWindow(SW_SHOW);
     }else if(nIDEvent == _vocab_auto_timer){
         if(!_mode_learn){
-            MAP_IT it = get_random_pair(true);
+            MAP_CIT it = _words_map.end();
+            if(_random_pair)
+                it = get_random_pair(true);
+            else{
+                if(_it_lasting == _words_map.end())
+                    return;
+                it = _it_lasting;
+                if(++_it_lasting == _words_map.end()){
+                    KillTimer(_vocab_auto_timer);
+                    bool cont = AfxMessageBox(L"Reached end of words list. Start again?", MB_YESNO) == IDYES;
+                    if(cont)
+                        _it_lasting = _words_map.begin();
+                    _vocab_auto_timer = SetTimer(2, _opt.to(), NULL);
+                    if(!cont)
+                        return;
+                }
+            }
             wstring s(it->first);
             s += L" - ";
             s += it->second;
@@ -319,7 +357,7 @@ void CEnglishTrainingDlg::OnTimer(UINT_PTR nIDEvent){
 
 void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
     wchar_t curr_translation[MAX_PATH]={};
-    size_t len = Translations.GetWindowTextW(curr_translation,MAX_PATH);
+    size_t len = Translations.GetWindowTextW(curr_translation, MAX_PATH);
     if(!curr_translation[0])
         return;
     locale loc;
@@ -435,14 +473,17 @@ void CEnglishTrainingDlg::OnBnClickedBtnReload(){
     Translations.SetFocus();
 }
 
-void CEnglishTrainingDlg::OnBnClickedRadioChoose(){
+void CEnglishTrainingDlg::OnBnClickedRadioVocab(){
+    PrevTranslation.SetWindowTextW(L"Vocabulary mode");
     CheckRadioButton(IDC_RADIO1,IDC_RADIO2,IDC_RADIO2);
     CheckTranslateFromEng.EnableWindow(TRUE);
     CheckBoxAuto.EnableWindow(TRUE);
     if(_opt._static_data._vocab_auto){
-        ASSERT(_vocab_auto_timer == -1);
-        if(_opt.to() != -1)
+        if(_opt.to() != -1 && _vocab_auto_timer == -1){
+            if(_it_lasting == _words_map.end())
+                _it_lasting = _words_map.begin();
             _vocab_auto_timer = SetTimer(2, _opt.to(), NULL);
+        }
     }
     if(CWnd* edit_combo = Translations.GetWindow(GW_CHILD)){
         Translations.ModifyStyle(CBS_DROPDOWN, CBS_DROPDOWNLIST);
@@ -451,6 +492,7 @@ void CEnglishTrainingDlg::OnBnClickedRadioChoose(){
     _mode_learn = false;
     Stat_Result.SetWindowTextW(L"Choose word from combo");
     SourceWord.SetWindowTextW(L"");
+    BtnSyns.EnableWindow(_opt._static_data._vocab_auto == 0), BtnForgetWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnAddWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnVocabWebster.EnableWindow(_opt._static_data._vocab_auto == 0), BtnPauseContinue.EnableWindow(_opt._static_data._vocab_auto == 1);
     fill_ui_data(true);
     KillTimer(_my_timer);
 }
@@ -466,7 +508,9 @@ void CEnglishTrainingDlg::OnBnClickedRadioLearn(){
     _mode_learn = true;
     Stat_Result.SetWindowTextW(L"Choose Translation");
     SourceWord.SetWindowTextW(L"");
+    PrevTranslation.SetWindowTextW(L"");
     fill_ui_data(true);
+    BtnSyns.EnableWindow(TRUE), BtnForgetWord.EnableWindow(TRUE), BtnAddWord.EnableWindow(TRUE), BtnVocabWebster.EnableWindow(TRUE), BtnPauseContinue.EnableWindow(FALSE);
 }
 
 void CEnglishTrainingDlg::find_and_replace(std::string& src_, char const* find_what_, char const* replace_by_){
@@ -490,7 +534,7 @@ void CEnglishTrainingDlg::find_and_replace(std::string& src_, char const* find_w
 }
 
 void CEnglishTrainingDlg::open_url(URLS url_index_){
-    if(url_index_ < url_vocab && !_curr_pair.first.length())
+    if(url_index_ < url_vocab && !_curr_pair.first.length() && _mode_learn)
         return;
     string url;
     char* s = nullptr;
@@ -502,6 +546,13 @@ void CEnglishTrainingDlg::open_url(URLS url_index_){
         url += s;
         delete[] s;
     }else if(url_index_ != url_vocab){
+        if(_opt.is_auto()){
+            wchar_t s[MAX_PATH]={};
+            Stat_Result.GetWindowTextW(s, MAX_PATH);
+            if(wchar_t* p = wcschr(s, L' '))
+                *p = L'\0';
+            _last_eng_word = s;
+        }
         if(_last_eng_word.length()){
             size_t len = _last_eng_word.length() + 1;
             s = new char[len];
@@ -540,7 +591,7 @@ void CEnglishTrainingDlg::OnBnClickedBtnHelp(){
     Stat_Result.SetWindowTextW(_curr_right_transl.c_str());
     Translations.SetCurSel(Translations.FindStringExact(0,_curr_right_transl.c_str()));
     wchar_t src[MAX_PATH]={};
-    SourceWord.GetWindowTextW(src,MAX_PATH);
+    SourceWord.GetWindowTextW(src, MAX_PATH);
     _most_active_words_map.insert(_curr_pair);
     Translations.SetFocus();
 }
@@ -550,7 +601,7 @@ void CEnglishTrainingDlg::OnBnClickedBtnSetFile(){
     fd.DoModal();
     OPENFILENAME ofn = fd.GetOFN();
     if(ofn.lpstrFile[0]){
-        WideCharToMultiByte(CP_ACP,0,ofn.lpstrFile,-1,_source_file,MAX_PATH,NULL,NULL);
+        WideCharToMultiByte(CP_ACP,0,ofn.lpstrFile,-1,_source_file, MAX_PATH,NULL,NULL);
         OnBnClickedBtnReload();
     }
 }
@@ -585,12 +636,13 @@ void CEnglishTrainingDlg::OnBnClickedCheckFromEngToRus(){
 
 void CEnglishTrainingDlg::OnBnClickedCheckAuto(){
     _opt._static_data._vocab_auto = (CheckBoxAuto.GetCheck() == BST_CHECKED) ? 1 : 0;
-    if(_mode_learn)
-        return;
+    ASSERT(!_mode_learn);
+    BtnSyns.EnableWindow(_opt._static_data._vocab_auto == 0), BtnForgetWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnAddWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnVocabWebster.EnableWindow(_opt._static_data._vocab_auto == 0), BtnPauseContinue.EnableWindow(_opt._static_data._vocab_auto == 1);
     if(_opt._static_data._vocab_auto){
         ASSERT(_vocab_auto_timer == -1);
+        MAP_IT it = _words_map.end();
         if(_opt.to() != -1){
-            MAP_IT it = get_random_pair(true);
+            MAP_IT it = _random_pair ? get_random_pair(true) : _words_map.begin();
             wstring s(it->first);
             s += L" - ";
             s += it->second;
@@ -678,7 +730,7 @@ void CEnglishTrainingDlg::OnBnClickedBtnSyns(){
     }
 }
 
-void CEnglishTrainingDlg::OnBnClickedCheckRandom(){ _random_pair = CheckBoxRandom.GetCheck() == BST_CHECKED; }
+void CEnglishTrainingDlg::OnBnClickedCheckRandom(){ _opt.set_rand(_random_pair = CheckBoxRandom.GetCheck() == BST_CHECKED); }
 
 void CEnglishTrainingDlg::OnCbnKillfocusComboSiteUrl(){
     //ActivateKeyboardLayout(_eng_kbd, KLF_SETFORPROCESS);
@@ -707,4 +759,15 @@ void CEnglishTrainingDlg::OnCbnKillfocusComboSiteUrl(){
     //else
     //    ComboSearchUrl.SetCurSel(ComboSearchUrl.AddString(p));
     //_opt.set_search_url(p);
+}
+
+void CEnglishTrainingDlg::OnBnClickedBtnPause(){
+    static bool running = true;
+    if(running && _vocab_auto_timer != -1){
+        KillTimer(_vocab_auto_timer);
+        _vocab_auto_timer = -1;
+    }else if(_vocab_auto_timer == -1)
+        _vocab_auto_timer = SetTimer(2, _opt.to(), NULL);
+    running = !running;
+    BtnPauseContinue.SetWindowTextW(running ? L"p" : L"c");
 }

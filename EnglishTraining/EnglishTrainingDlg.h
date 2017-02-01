@@ -14,7 +14,7 @@ struct OPTIONS{
     struct A{
         long _left, _top;
         size_t _to;
-        int _vocab_from_rus2eng, _vocab_auto;
+        int _vocab_from_rus2eng, _vocab_auto, _is_random;
         enum APP_REGIME{ _study_ = 1, _vocab_ }_regime;
         wchar_t _all_search_urls[20][MAX_PATH];
         A() : _left(50), _top(100), _to(60*ONE_SEC), _regime(_study_){ ZeroMemory(_all_search_urls, 20 * MAX_PATH * sizeof(wchar_t)); }
@@ -22,12 +22,15 @@ struct OPTIONS{
     long left()const{ return _static_data._left; }
     long top()const{ return _static_data._top; }
     size_t to()const{ return _static_data._to; }
+    bool rand()const{ return _static_data._is_random==1; }
+    bool is_auto()const{ return _static_data._vocab_auto==1; }
     A::APP_REGIME regime()const{ return _static_data._regime; }
     map<int, wstring> _timeouts;
     HANDLE _cfg_file;
     OPTIONS();
     ~OPTIONS();
     void set_show_timeout(wchar_t const* to_);
+    void set_rand(bool rand_);
 };
 
 // CEnglishTrainingDlg dialog
@@ -63,10 +66,12 @@ private:
     typedef std::pair<wstring, wstring> MAP_PAIR;
     typedef map<wstring, wstring> WORDS_MAP;
     typedef WORDS_MAP::iterator MAP_IT;
+    typedef WORDS_MAP::const_iterator MAP_CIT;
     WORDS_MAP _words_map;
     WORDS_MAP _most_active_words_map;
     WORDS_MAP _syns;
     MAP_PAIR _curr_pair;
+    MAP_CIT _it_lasting;
     char _source_file[MAX_PATH];
     bool _random_pair;
     void read_source_file();
@@ -128,15 +133,15 @@ private:
     gen_random<int>* _rnd;
 public:
     CStatic SourceWord, Stat_Result, PrevTranslation;
-    CComboBox Translations, ComboTO;
-    CButton RadioLearn, RadioChoose, CheckTranslateFromEng, CheckOnTop, BtnSyns, CheckBoxRandom, CheckBoxAuto;
-    CComboBox ComboSearchUrl;
+    CComboBox Translations, ComboTO, ComboSearchUrl;
+    CButton RadioLearn, RadioChoose, CheckTranslateFromEng, CheckOnTop, CheckBoxRandom, CheckBoxAuto;
+    CButton BtnSyns, BtnForgetWord, BtnAddWord, BtnPrononc, BtnVocabWebster, BtnVocabMueller, BtnPauseContinue;
     afx_msg void OnTimer(UINT_PTR nIDEvent);
     afx_msg void OnBnClickedBtnSubmit();
     afx_msg void OnCbnSelchangeComboTo();
     afx_msg void OnBnClickedBtnEditfile();
     afx_msg void OnBnClickedBtnReload();
-    afx_msg void OnBnClickedRadioChoose();
+    afx_msg void OnBnClickedRadioVocab();
     afx_msg void OnBnClickedRadioLearn();
     afx_msg void OnBnClickedBtnPrononce();
     afx_msg void OnBnClickedBtnExamp();
@@ -156,4 +161,5 @@ public:
     afx_msg void OnBnClickedCheckRandom();
     afx_msg void OnCbnKillfocusComboSiteUrl();
     afx_msg void OnBnClickedCheckAuto();
+    afx_msg void OnBnClickedBtnPause();
 };
