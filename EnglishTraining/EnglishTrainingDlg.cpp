@@ -28,12 +28,16 @@ OPTIONS::OPTIONS() {
         if(ReadFile(_cfg_file, &_static_data, d, &d, NULL))
             SetFilePointer(_cfg_file, 0, NULL, FILE_BEGIN);
     wcscpy_s(_static_data._all_search_urls[0], L"cnn.com");
-    wcscpy_s(_static_data._all_search_urls[1], L"nationalgeographic.com");
-    wcscpy_s(_static_data._all_search_urls[2], L"bbc.co.uk");
-    wcscpy_s(_static_data._all_search_urls[3], L"ft.com");
-    wcscpy_s(_static_data._all_search_urls[4], L"wsj.com");
-    wcscpy_s(_static_data._all_search_urls[5], L"health.com");
-    wcscpy_s(_static_data._all_search_urls[6], L"webmd.com");
+    wcscpy_s(_static_data._all_search_urls[1], L"bbc.co.uk");
+    wcscpy_s(_static_data._all_search_urls[2], L"bbc.com");
+    wcscpy_s(_static_data._all_search_urls[3], L"washingtonpost.com");
+    wcscpy_s(_static_data._all_search_urls[4], L"ft.com");
+    wcscpy_s(_static_data._all_search_urls[5], L"wsj.com");
+    wcscpy_s(_static_data._all_search_urls[6], L"berkshirehathaway.com");
+    wcscpy_s(_static_data._all_search_urls[7], L"nationalgeographic.com");
+    wcscpy_s(_static_data._all_search_urls[8], L"health.com");
+    wcscpy_s(_static_data._all_search_urls[9], L"webmd.com");
+    wcscpy_s(_static_data._all_search_urls[10], L"youtube.com");
 #ifdef _DEBUG
     _timeouts.insert(std::pair<int,wstring>(1*ONE_SEC, L"1"));
 #endif
@@ -97,6 +101,8 @@ void CEnglishTrainingDlg::DoDataExchange(CDataExchange* pDX){
     DDX_Control(pDX, ID_BTN_EXAMP, BtnVocabWebster);
     DDX_Control(pDX, ID_BTN_DICT, BtnVocabMueller);
     DDX_Control(pDX, ID_BTN_PAUSE, BtnPauseContinue);
+    DDX_Control(pDX, ID_BTN_FORW, BtnMoveForward);
+    DDX_Control(pDX, ID_CHECK_USE_PREFER_MAP, CheckUsePreferMap);
 }
 
 BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
@@ -128,18 +134,24 @@ BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
     ON_CBN_KILLFOCUS(ID_COMBO_SITE_URL, &CEnglishTrainingDlg::OnCbnKillfocusComboSiteUrl)
     ON_BN_CLICKED(ID_CHECK_AUTO, &CEnglishTrainingDlg::OnBnClickedCheckAuto)
     ON_BN_CLICKED(ID_BTN_PAUSE, &CEnglishTrainingDlg::OnBnClickedBtnPause)
+    ON_BN_CLICKED(ID_BTN_FORW, &CEnglishTrainingDlg::OnBnClickedBtnForw)
+    ON_BN_CLICKED(ID_BTN_ADD_TO_MOST, &CEnglishTrainingDlg::OnBnClickedBtnAddToMost)
+    ON_BN_CLICKED(ID_CHECK_USE_PREFER_MAP, &CEnglishTrainingDlg::OnBnClickedCheckUsePreferMap)
+    ON_WM_KEYDOWN()
 END_MESSAGE_MAP()
 
-void CEnglishTrainingDlg::fill_combo(int rus_){
+void CEnglishTrainingDlg::fill_main_combo(int rus_){
     for(int i = Translations.GetCount() - 1; i >= 0; i--)
         Translations.DeleteString(i);
     for(MAP_IT it = _words_map.begin(); it != _words_map.end(); ++it)
+        Translations.AddString(rus_ ? it->first.c_str() : it->second.c_str());
+    for(MAP_IT it = _most_active_words_map.begin(); it != _most_active_words_map.end(); ++it)
         Translations.AddString(rus_ ? it->first.c_str() : it->second.c_str());
     Translations.SetCurSel(-1);
     Translations.SetDroppedWidth(!rus_ ? 500 : 100);
 }
 
-void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_){
+void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_, _In_opt_ bool reset_/* = false */){
     if(!_words_map.size()){
         Stat_Result.SetWindowTextW(L"Error loading words");
         SetWindowTextA(m_hWnd, _caption.c_str());
@@ -154,14 +166,14 @@ void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_){
     if(_mode_learn)
         _rus2eng_learn = gr;
     else{
-        MAP_IT it = get_random_pair(true);
+        MAP_IT it = get_random_pair(true, reset_);
         wstring s(it->first);
         s += L" - ";
         s += it->second;
         Stat_Result.SetWindowTextW(s.c_str());
     }
 //    _rus2eng_learn = 1;
-    fill_combo(_mode_learn ? !_rus2eng_learn : _opt._static_data._vocab_from_rus2eng);
+    fill_main_combo(_mode_learn ? !_rus2eng_learn : _opt._static_data._vocab_from_rus2eng);
     if(_mode_learn){
         bool base_map = true;
         if(_most_active_words_map.size()){
@@ -171,9 +183,11 @@ void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_){
                 base_map = false;
             }
         }
+        if(base_map && CheckUsePreferMap.GetCheck()==BST_CHECKED)
+            base_map = false;
         MAP_CIT it = _words_map.begin();
         if(_random_pair)
-            it = get_random_pair(base_map);
+            it = get_random_pair(base_map, reset_);
         else{
             if(_it_lasting == _words_map.end())
                 _it_lasting = _words_map.begin();
@@ -256,9 +270,9 @@ BOOL CEnglishTrainingDlg::OnInitDialog(){
 #endif
     for(int i = 0; _opt._static_data._all_search_urls[i][0]; ++i)
         ComboSearchUrl.AddString(_opt._static_data._all_search_urls[i]);
-    ComboSearchUrl.SetCurSel(0);
+    ComboSearchUrl.SetCurSel(_opt._static_data._url_index);
     if(!_mode_learn)
-        BtnSyns.EnableWindow(_opt._static_data._vocab_auto == 0), BtnForgetWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnAddWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnVocabWebster.EnableWindow(_opt._static_data._vocab_auto == 0), BtnPauseContinue.EnableWindow(_opt._static_data._vocab_auto == 1);
+        BtnSyns.EnableWindow(_opt._static_data._vocab_auto == 0), BtnAddWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnVocabWebster.EnableWindow(_opt._static_data._vocab_auto == 0), BtnPauseContinue.EnableWindow(_opt._static_data._vocab_auto == 1), BtnMoveForward.EnableWindow(_opt._static_data._vocab_auto == 1);
     return TRUE;
 }
 
@@ -318,6 +332,45 @@ void CEnglishTrainingDlg::read_source_file(){
     _rnd->set_range(0,_words_map.size());
 }
 
+void CEnglishTrainingDlg::vocab_mode_next_word(){
+    ASSERT(!_mode_learn);
+    bool base_map = CheckUsePreferMap.GetCheck()!=BST_CHECKED;
+    if(!base_map && !_most_active_words_map.size())
+        base_map = true;
+    MAP_CIT it = base_map ? _words_map.end() : _most_active_words_map.end();
+    if(_random_pair)
+        it = get_random_pair(base_map);
+    else{
+        if(_it_lasting == _words_map.end()){
+            if(AfxMessageBox(L"Reached end of words list. Start again?", MB_YESNO) != IDYES)
+                return;
+            // TODO
+            _it_lasting = _words_map.begin();
+        }
+        it = _it_lasting;
+        if(++_it_lasting == _words_map.end()){
+            if(_vocab_auto_timer != -1){
+                KillTimer(_vocab_auto_timer);
+                _vocab_auto_timer = -1;
+            }
+            bool cont = AfxMessageBox(L"Reached end of words list. Start again?", MB_YESNO) == IDYES;
+            if(cont)
+                _it_lasting = _words_map.begin();
+            wchar_t s[2]={};
+            BtnPauseContinue.GetWindowTextW(s, 2);
+            if(cont && s[0] == L'p')
+                _vocab_auto_timer = SetTimer(2, _opt.to(), NULL);
+            if(!cont)
+                return;
+        }
+    }
+    wstring s(it->first);
+    s += L" - ";
+    s += it->second;
+    Stat_Result.SetWindowTextW(s.c_str());
+    _curr_pair = MAP_PAIR(it->first, it->second);
+}
+
 void CEnglishTrainingDlg::OnTimer(UINT_PTR nIDEvent){
     if(nIDEvent == _my_timer){
         KillTimer(_my_timer);
@@ -325,29 +378,9 @@ void CEnglishTrainingDlg::OnTimer(UINT_PTR nIDEvent){
         fill_ui_data(true);
         ShowWindow(SW_SHOW);
     }else if(nIDEvent == _vocab_auto_timer){
-        if(!_mode_learn){
-            MAP_CIT it = _words_map.end();
-            if(_random_pair)
-                it = get_random_pair(true);
-            else{
-                if(_it_lasting == _words_map.end())
-                    return;
-                it = _it_lasting;
-                if(++_it_lasting == _words_map.end()){
-                    KillTimer(_vocab_auto_timer);
-                    bool cont = AfxMessageBox(L"Reached end of words list. Start again?", MB_YESNO) == IDYES;
-                    if(cont)
-                        _it_lasting = _words_map.begin();
-                    _vocab_auto_timer = SetTimer(2, _opt.to(), NULL);
-                    if(!cont)
-                        return;
-                }
-            }
-            wstring s(it->first);
-            s += L" - ";
-            s += it->second;
-            Stat_Result.SetWindowTextW(s.c_str());
-        }else{
+        if(!_mode_learn)
+            vocab_mode_next_word();
+        else{
             KillTimer(_vocab_auto_timer);
             _vocab_auto_timer = -1;
         }
@@ -368,16 +401,27 @@ void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
     bool is_substr = false, suggest_found = false;
     wstring compare_to, substr_full_transl;
     int rus_to_eng = _mode_learn ? !_rus2eng_learn : _opt._static_data._vocab_from_rus2eng;
-    auto f = [&](WORDS_MAP& map_){ for(it = _words_map.begin(); it != _words_map.end(); ++it)if(it->second == curr_translation)break; };
+    auto find_by_rus = [&](WORDS_MAP& map_){ for(it = _words_map.begin(); it != _words_map.end(); ++it)if(it->second == curr_translation)break; };
+    auto find_by_eng = [&](WORDS_MAP& map_){
+        if((it = map_.find(curr_translation)) == map_.end())
+            // look for a substring
+            for(it = map_.begin(); it != map_.end(); ++it)
+                if((is_substr = (wcslen(curr_translation) >= 3 && (wcsstr(it->first.c_str(), curr_translation) != NULL) && (it->first != curr_translation)))){
+                    compare_to = it->second;
+                    substr_full_transl = it->first;
+                    suggest_found = true;
+                    break;
+                }
+    };
     if(!rus_to_eng){
         // seek for Russian translation
         if(_curr_pair.second == curr_translation)
             compare_to = _curr_pair.first;
         else{
             if(!_mode_learn){
-                f(_words_map);
+                find_by_rus(_words_map);
                 if(it == _words_map.end())
-                    f(_most_active_words_map);
+                    find_by_rus(_most_active_words_map);
                 _curr_pair = MAP_PAIR(it->first, it->second);
             }
             if(wcslen(curr_translation) >= 3 && (wcsstr(_curr_pair.second.c_str(), curr_translation) != NULL) && (_curr_pair.second != curr_translation)){
@@ -391,17 +435,14 @@ void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
         }
     }else{
         // find English keyword
-        if((it = _words_map.find(curr_translation)) == _words_map.end())
-            // look for a substring
-            for(it = _words_map.begin(); it != _words_map.end(); ++it)
-                if((is_substr = (wcslen(curr_translation) >= 3 && (wcsstr(it->first.c_str(), curr_translation) != NULL) && (it->first != curr_translation)))){
-                    compare_to = it->second;
-                    substr_full_transl = it->first;
-                    suggest_found = true;
-                    break;
-                }
+        bool is_base_map = true;
+        find_by_eng(_words_map);
+        if(it == _words_map.end() /*|| (it != _words_map.end() && is_substr)*/){
+            find_by_eng(_most_active_words_map);
+            is_base_map = false;
+        }
         if(_mode_learn){
-            if(it != _words_map.end())
+            if((is_base_map && it != _words_map.end()) || (!is_base_map && it != _most_active_words_map.end()))
                 compare_to = it->second;
         }else
             _curr_pair = MAP_PAIR(it->first, it->second);
@@ -469,7 +510,7 @@ void CEnglishTrainingDlg::OnBnClickedBtnReload(){
     Stat_Result.SetWindowTextW(_mode_learn ? L"Choose Translation" : L"Choose word from combo");
     PrevTranslation.SetWindowTextW(L"");
     read_source_file();
-    fill_ui_data(false);
+    fill_ui_data(false, true);
     Translations.SetFocus();
 }
 
@@ -492,7 +533,7 @@ void CEnglishTrainingDlg::OnBnClickedRadioVocab(){
     _mode_learn = false;
     Stat_Result.SetWindowTextW(L"Choose word from combo");
     SourceWord.SetWindowTextW(L"");
-    BtnSyns.EnableWindow(_opt._static_data._vocab_auto == 0), BtnForgetWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnAddWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnVocabWebster.EnableWindow(_opt._static_data._vocab_auto == 0), BtnPauseContinue.EnableWindow(_opt._static_data._vocab_auto == 1);
+    BtnSyns.EnableWindow(_opt._static_data._vocab_auto == 0), BtnAddWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnVocabWebster.EnableWindow(_opt._static_data._vocab_auto == 0), BtnPauseContinue.EnableWindow(_opt._static_data._vocab_auto == 1), BtnMoveForward.EnableWindow(_opt._static_data._vocab_auto == 1);
     fill_ui_data(true);
     KillTimer(_my_timer);
 }
@@ -510,7 +551,7 @@ void CEnglishTrainingDlg::OnBnClickedRadioLearn(){
     SourceWord.SetWindowTextW(L"");
     PrevTranslation.SetWindowTextW(L"");
     fill_ui_data(true);
-    BtnSyns.EnableWindow(TRUE), BtnForgetWord.EnableWindow(TRUE), BtnAddWord.EnableWindow(TRUE), BtnVocabWebster.EnableWindow(TRUE), BtnPauseContinue.EnableWindow(FALSE);
+    BtnSyns.EnableWindow(TRUE), BtnAddWord.EnableWindow(TRUE), BtnVocabWebster.EnableWindow(TRUE), BtnPauseContinue.EnableWindow(FALSE), BtnMoveForward.EnableWindow(FALSE);
 }
 
 void CEnglishTrainingDlg::find_and_replace(std::string& src_, char const* find_what_, char const* replace_by_){
@@ -546,7 +587,7 @@ void CEnglishTrainingDlg::open_url(URLS url_index_){
         url += s;
         delete[] s;
     }else if(url_index_ != url_vocab){
-        if(_opt.is_auto()){
+        if(_opt.is_auto() && !_mode_learn){
             wchar_t s[MAX_PATH]={};
             Stat_Result.GetWindowTextW(s, MAX_PATH);
             if(wchar_t* p = wcschr(s, L' '))
@@ -589,10 +630,11 @@ void CEnglishTrainingDlg::OnBnClickedBtnExamp(){ open_url(url_webster); }
 
 void CEnglishTrainingDlg::OnBnClickedBtnHelp(){
     Stat_Result.SetWindowTextW(_curr_right_transl.c_str());
-    Translations.SetCurSel(Translations.FindStringExact(0,_curr_right_transl.c_str()));
+    Translations.SetCurSel(Translations.FindStringExact(0, _curr_right_transl.c_str()));
     wchar_t src[MAX_PATH]={};
     SourceWord.GetWindowTextW(src, MAX_PATH);
     _most_active_words_map.insert(_curr_pair);
+    _words_map.erase(_curr_pair.first);
     Translations.SetFocus();
 }
 
@@ -637,7 +679,7 @@ void CEnglishTrainingDlg::OnBnClickedCheckFromEngToRus(){
 void CEnglishTrainingDlg::OnBnClickedCheckAuto(){
     _opt._static_data._vocab_auto = (CheckBoxAuto.GetCheck() == BST_CHECKED) ? 1 : 0;
     ASSERT(!_mode_learn);
-    BtnSyns.EnableWindow(_opt._static_data._vocab_auto == 0), BtnForgetWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnAddWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnVocabWebster.EnableWindow(_opt._static_data._vocab_auto == 0), BtnPauseContinue.EnableWindow(_opt._static_data._vocab_auto == 1);
+    BtnSyns.EnableWindow(_opt._static_data._vocab_auto == 0), BtnAddWord.EnableWindow(_opt._static_data._vocab_auto == 0), BtnVocabWebster.EnableWindow(_opt._static_data._vocab_auto == 0), BtnPauseContinue.EnableWindow(_opt._static_data._vocab_auto == 1), BtnMoveForward.EnableWindow(_opt._static_data._vocab_auto == 1);
     if(_opt._static_data._vocab_auto){
         ASSERT(_vocab_auto_timer == -1);
         MAP_IT it = _words_map.end();
@@ -725,7 +767,7 @@ void CEnglishTrainingDlg::OnBnClickedBtnSyns(){
     if(it != _syns.end()){
         syns = it->second;
         syns += L"\nCheck synonyms online?";
-        if(MessageBox(syns.c_str(),_curr_pair.first.c_str(),MB_YESNO) == IDYES)
+        if(MessageBox(syns.c_str(), L"Synonym found", MB_YESNO) == IDYES)
             open_url(url_synonym);
     }
 }
@@ -759,6 +801,7 @@ void CEnglishTrainingDlg::OnCbnKillfocusComboSiteUrl(){
     //else
     //    ComboSearchUrl.SetCurSel(ComboSearchUrl.AddString(p));
     //_opt.set_search_url(p);
+    _opt._static_data._url_index = ComboSearchUrl.GetCurSel();
 }
 
 void CEnglishTrainingDlg::OnBnClickedBtnPause(){
@@ -771,3 +814,22 @@ void CEnglishTrainingDlg::OnBnClickedBtnPause(){
     running = !running;
     BtnPauseContinue.SetWindowTextW(running ? L"p" : L"c");
 }
+
+void CEnglishTrainingDlg::OnBnClickedBtnForw(){ vocab_mode_next_word(); }
+
+void CEnglishTrainingDlg::OnBnClickedBtnAddToMost(){
+    if(_curr_pair.first.length()){
+        _most_active_words_map.insert(_curr_pair);
+        _words_map.erase(_curr_pair.first);
+    }
+}
+
+void CEnglishTrainingDlg::OnBnClickedCheckUsePreferMap(){
+}
+
+void CEnglishTrainingDlg::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags){
+    if(nChar!=VK_ESCAPE)
+        CDialogEx::OnKeyDown(nChar, nRepCnt, nFlags);
+}
+
+BOOL CEnglishTrainingDlg::PreTranslateMessage(MSG* pMsg){ return (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_ESCAPE) ? TRUE : CDialogEx::PreTranslateMessage(pMsg); }

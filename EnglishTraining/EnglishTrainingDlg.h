@@ -14,10 +14,10 @@ struct OPTIONS{
     struct A{
         long _left, _top;
         size_t _to;
-        int _vocab_from_rus2eng, _vocab_auto, _is_random;
+        int _vocab_from_rus2eng, _vocab_auto, _is_random, _url_index;
         enum APP_REGIME{ _study_ = 1, _vocab_ }_regime;
         wchar_t _all_search_urls[20][MAX_PATH];
-        A() : _left(50), _top(100), _to(60*ONE_SEC), _regime(_study_){ ZeroMemory(_all_search_urls, 20 * MAX_PATH * sizeof(wchar_t)); }
+        A() : _left(50), _top(100), _to(60*ONE_SEC), _regime(_study_), _url_index(0){ ZeroMemory(_all_search_urls, 20 * MAX_PATH * sizeof(wchar_t)); }
     }_static_data;
     long left()const{ return _static_data._left; }
     long top()const{ return _static_data._top; }
@@ -75,8 +75,8 @@ private:
     char _source_file[MAX_PATH];
     bool _random_pair;
     void read_source_file();
-    void fill_combo(int rus_);
-    MAP_IT get_random_pair(_In_ bool main_dict_){
+    void fill_main_combo(int rus_);
+    MAP_IT get_random_pair(_In_ bool main_dict_, _In_opt_ bool reset_ = false){
         //MAP_IT i = _words_map.begin();
         //for(; i != _words_map.end(); ++i)
         //    if(i->second == L"1. скромный, смиренный; 2. простой, бедный")
@@ -96,6 +96,8 @@ private:
         };
         auto _get_next_ = [&](_In_ bool main_map_)->MAP_IT{
             static MAP_IT it_main = _words_map.begin(), it_most = _most_active_words_map.begin();
+            if(reset_)
+                it_main = _words_map.begin(), it_most = _most_active_words_map.begin();
             if(!main_map_ && !_most_active_words_map.size())
                 main_map_ = true;
             if(main_map_){
@@ -109,7 +111,7 @@ private:
         };
         return _random_pair ? ((!main_dict_ && _most_active_words_map.size()) ? _get_rnd_(_most_active_words_map) : _get_rnd_(_words_map)) : _get_next_(main_dict_);
     }
-    void fill_ui_data(_In_ bool update_prev_);
+    void fill_ui_data(_In_ bool update_prev_, _In_opt_ bool reset_ = false);
     void fill_to_combo();
     void parse_and_insert_str(wstring& ws, size_t end_ofLine_idx_, bool also_help_map_);
     void find_and_replace(std::string& src_, char const* find_what_, char const* replace_by_);
@@ -121,6 +123,7 @@ private:
         url_bbc,
         url_vocab // keep it last
     };
+    void vocab_mode_next_word();
     void open_url(URLS url_index_);
     int _my_timer, _vocab_auto_timer;
     int _rus2eng_learn;
@@ -135,7 +138,7 @@ public:
     CStatic SourceWord, Stat_Result, PrevTranslation;
     CComboBox Translations, ComboTO, ComboSearchUrl;
     CButton RadioLearn, RadioChoose, CheckTranslateFromEng, CheckOnTop, CheckBoxRandom, CheckBoxAuto;
-    CButton BtnSyns, BtnForgetWord, BtnAddWord, BtnPrononc, BtnVocabWebster, BtnVocabMueller, BtnPauseContinue;
+    CButton BtnSyns, BtnForgetWord, BtnAddWord, BtnPrononc, BtnVocabWebster, BtnVocabMueller, BtnPauseContinue, BtnMoveForward, CheckUsePreferMap;
     afx_msg void OnTimer(UINT_PTR nIDEvent);
     afx_msg void OnBnClickedBtnSubmit();
     afx_msg void OnCbnSelchangeComboTo();
@@ -162,4 +165,9 @@ public:
     afx_msg void OnCbnKillfocusComboSiteUrl();
     afx_msg void OnBnClickedCheckAuto();
     afx_msg void OnBnClickedBtnPause();
+    afx_msg void OnBnClickedBtnForw();
+    afx_msg void OnBnClickedBtnAddToMost();
+    afx_msg void OnBnClickedCheckUsePreferMap();
+    afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+    virtual BOOL PreTranslateMessage(MSG* pMsg);
 };
