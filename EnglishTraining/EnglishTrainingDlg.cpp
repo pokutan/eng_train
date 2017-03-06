@@ -11,8 +11,6 @@
 //#include "scope_guard.h"
 #include <fstream>
 #include <sstream>
-#include <iostream>
-#include <algorithm>
 #include <locale>
 
 using namespace std;
@@ -172,7 +170,7 @@ void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_, _In_opt_ bool res
         s += it->second;
         Stat_Result.SetWindowTextW(s.c_str());
     }
-//    _rus2eng_learn = 1;
+//    _rus2eng_learn = 0;
     fill_main_combo(_mode_learn ? !_rus2eng_learn : _opt._static_data._vocab_from_rus2eng);
     if(_mode_learn){
         bool base_map = true;
@@ -397,98 +395,40 @@ void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
     for(string::size_type n = 0; n < len; ++n)
         curr_translation[n] = tolower(curr_translation[n], loc);
     MAP_IT it;
-    Stat_Result.SetWindowTextW(_mode_learn ? L"Choose Translation" : L"Choose Word");
-    bool is_substr = false, suggest_found = false;
-    wstring compare_to, substr_full_transl;
     int rus_to_eng = _mode_learn ? !_rus2eng_learn : _opt._static_data._vocab_from_rus2eng;
-    auto find_by_rus = [&](WORDS_MAP& map_){ for(it = _words_map.begin(); it != _words_map.end(); ++it)if(it->second == curr_translation)break; };
-    auto find_by_eng = [&](WORDS_MAP& map_){
-        if((it = map_.find(curr_translation)) == map_.end())
-            // look for a substring
-            for(it = map_.begin(); it != map_.end(); ++it)
-                if((is_substr = (wcslen(curr_translation) >= 3 && (wcsstr(it->first.c_str(), curr_translation) != NULL) && (it->first != curr_translation)))){
-                    compare_to = it->second;
-                    substr_full_transl = it->first;
-                    suggest_found = true;
-                    break;
-                }
-    };
-    if(!rus_to_eng){
-        // seek for Russian translation
-        if(_curr_pair.second == curr_translation)
-            compare_to = _curr_pair.first;
-        else{
-            if(!_mode_learn){
-                find_by_rus(_words_map);
-                if(it == _words_map.end())
-                    find_by_rus(_most_active_words_map);
-                _curr_pair = MAP_PAIR(it->first, it->second);
-            }
-            if(wcslen(curr_translation) >= 3 && (wcsstr(_curr_pair.second.c_str(), curr_translation) != NULL) && (_curr_pair.second != curr_translation)){
-                if(!_mode_learn || (_mode_learn && _curr_pair.second == _curr_right_transl)){
-                    is_substr = true;
-                    substr_full_transl = _curr_pair.second;
-                    compare_to = _curr_pair.first;
-                    suggest_found = true;
-                }
-            }
-        }
-    }else{
-        // find English keyword
-        bool is_base_map = true;
-        find_by_eng(_words_map);
-        if(it == _words_map.end() /*|| (it != _words_map.end() && is_substr)*/){
-            find_by_eng(_most_active_words_map);
-            is_base_map = false;
-        }
-        if(_mode_learn){
-            if((is_base_map && it != _words_map.end()) || (!is_base_map && it != _most_active_words_map.end()))
-                compare_to = it->second;
-        }else
-            _curr_pair = MAP_PAIR(it->first, it->second);
-    }
-    // after 3 wrong tries we start to suggest translation
+    Stat_Result.SetWindowTextW(_mode_learn ? L"Choose Translation" : L"Choose Word");
     static int try_counter = 1;
     static size_t i = 0;
-
-    if(_mode_learn && !compare_to.length() && !suggest_found){
-        if(++try_counter <= 3)
-            _text_err = L"Wrong! Try Again: ";
-        else if(i < _curr_right_transl.length())
-            _text_err += _curr_right_transl[i++];
-        Stat_Result.SetWindowTextW(_text_err.c_str());
-        return;
-    }
-    if(is_substr && substr_full_transl.length() && suggest_found){
-        Translations.SetCurSel(Translations.FindString(0, substr_full_transl.c_str()));
-        if(_mode_learn)
-            return;
-    }
-    if(compare_to.length())
+    switch(check_translation(curr_translation, rus_to_eng)){
+    case 1:
         _last_eng_word = _curr_pair.first;
-    if(!_mode_learn){
-        wstring s = _curr_pair.first + L" - " + _curr_pair.second;
-        Stat_Result.SetWindowTextW(s.c_str());
-        return;
-    }
-    wchar_t ss[MAX_PATH]={};
-    SourceWord.GetWindowTextW(ss, MAX_PATH);
-    if(compare_to == ss){
-        ShowWindow(SW_HIDE);
-        wstring src(ss);
-        src += L" - ";
-        src += curr_translation;
-        PrevTranslation.SetWindowTextW(src.c_str());
-        if(_opt.to() != -1)
-            _my_timer = SetTimer(1, _opt.to(), NULL);
-        try_counter = 1;
-        i = 0;
-    }else{
-        if(++try_counter <= 3)
-            _text_err = L"Wrong! Try Again: ";
-        else if(i < _curr_right_transl.length())
-            _text_err += _curr_right_transl[i++];
-        Stat_Result.SetWindowTextW(_text_err.c_str());
+        if(!_mode_learn){
+            wstring s = _curr_pair.first + L" - " + _curr_pair.second;
+            Stat_Result.SetWindowTextW(s.c_str());
+        }else{
+            ShowWindow(SW_HIDE);
+            wstring src(_curr_pair.first);
+            src += L" - ";
+            src += _curr_pair.second;
+            PrevTranslation.SetWindowTextW(src.c_str());
+            if(_opt.to() != -1)
+                _my_timer = SetTimer(1, _opt.to(), NULL);
+            try_counter = 1;
+            i = 0;
+        }
+        break;
+    case 2:
+        Translations.SetCurSel(Translations.FindStringExact(-1, _curr_right_transl.c_str()));
+        break;
+    case 0:
+        // after 3 wrong tries we start to suggest translation
+        if(_mode_learn){
+            if(++try_counter <= 3)
+                _text_err = L"Wrong! Try Again: ";
+            else if(i < _curr_right_transl.length())
+                _text_err += _curr_right_transl[i++];
+            Stat_Result.SetWindowTextW(_text_err.c_str());
+        }
     }
 }
 
@@ -552,26 +492,6 @@ void CEnglishTrainingDlg::OnBnClickedRadioLearn(){
     PrevTranslation.SetWindowTextW(L"");
     fill_ui_data(true);
     BtnSyns.EnableWindow(TRUE), BtnAddWord.EnableWindow(TRUE), BtnVocabWebster.EnableWindow(TRUE), BtnPauseContinue.EnableWindow(FALSE), BtnMoveForward.EnableWindow(FALSE);
-}
-
-void CEnglishTrainingDlg::find_and_replace(std::string& src_, char const* find_what_, char const* replace_by_){
-    //ASSERT(find != NULL);
-    //ASSERT(replace != NULL);
-    size_t findLen = strlen(find_what_);
-    size_t replaceLen = strlen(replace_by_);
-    size_t pos = 0;
-
-    //search for the next occurrence of find within source
-    while((pos = src_.find(find_what_, pos)) != std::string::npos)
-    {
-        //replace the found string with the replacement
-        src_.replace(pos, findLen, replace_by_);
-
-        //the next line keeps you from searching your replace string, 
-        //so your could replace "hello" with "hello world" 
-        //and not have it blow chunks.
-        pos += replaceLen;
-    }
 }
 
 void CEnglishTrainingDlg::open_url(URLS url_index_){
@@ -728,35 +648,6 @@ void CEnglishTrainingDlg::OnBnClickedBtnPlusWord(){
     Translations.GetWindowText(s);
     parse_and_insert_str(wstring(s.GetBuffer()), s.GetLength(), true);
     fill_ui_data(false);
-}
-
-void CEnglishTrainingDlg::parse_and_insert_str(wstring& ws, size_t end_ofLine_idx_, bool also_help_map_){
-    if(ws.length()){
-        size_t seprtr_idx = ws.find(L';');
-        wstring s1 = ws.substr(0, seprtr_idx);
-        wstring s2 = ws.substr(seprtr_idx + 1, end_ofLine_idx_ - seprtr_idx - 1);
-        std::transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
-        std::transform(s2.begin(), s2.end(), s2.begin(), ::tolower);
-        if(s1.length() && s2.length()){
-            // check for English synonyms
-            if((seprtr_idx = s1.find(L'(')) != wstring::npos){
-                // check that it's not inside transcription
-                size_t close_bracket = s1.find(L'}');
-                if(close_bracket == wstring::npos || close_bracket < seprtr_idx){
-                    size_t end_brace = s1.find(L')');
-                    if(end_brace != wstring::npos){
-                        wstring syns = s1.substr(seprtr_idx + 1, end_brace - seprtr_idx - 1);
-                        s1 = s1.substr(0, seprtr_idx);
-                        _syns.insert(MAP_PAIR(s1, syns));
-                    }
-                }
-            }
-            _words_map.insert(MAP_PAIR(s1, s2));
-            if(also_help_map_)
-                _most_active_words_map.insert(MAP_PAIR(s1, s2));
-//            fill_ui_data(false);
-        }
-    }
 }
 
 void CEnglishTrainingDlg::OnBnClickedBtnSyns(){
