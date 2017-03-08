@@ -211,6 +211,9 @@ void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_, _In_opt_ bool res
     string ss = _caption;
     ss += " - ";
     ss += _source_file;
+    ss += " (";
+    ss += std::to_string(_words_map.size() + _most_active_words_map.size());
+    ss += " words)";
     SetWindowTextA(m_hWnd, ss.c_str());
 }
 
@@ -231,7 +234,7 @@ BOOL CEnglishTrainingDlg::OnInitDialog(){
     CDialogEx::OnInitDialog();
     SetIcon(m_hIcon,TRUE);
     SetIcon(m_hIcon,FALSE);
-    _caption = "English Vocabulay by pokutan";
+    _caption = "English by pokutan";
     // https://msdn.microsoft.com/en-us/library/dd318693.aspx
     _eng_kbd = LoadKeyboardLayoutW(L"00000409",KLF_SETFORPROCESS|KLF_ACTIVATE);
     _rus_kbd = LoadKeyboardLayoutW(L"00000419",KLF_SETFORPROCESS|KLF_ACTIVATE);
