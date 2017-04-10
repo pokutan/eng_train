@@ -502,11 +502,20 @@ void CEnglishTrainingDlg::open_url(URLS url_index_){
         return;
     string url;
     char* s = nullptr;
+    auto trim = [](char* s_){
+        char* p = nullptr;
+        if(p = strchr(s_, ','))*p = '\0';
+        if(p = strchr(s_, ' '))*p = '\0';
+        if(p = strchr(s_, '('))*p = '\0';
+        if(p = strchr(s_, '{'))*p = '\0';
+        if(p = strchr(s_, '-'))*p = '\0';
+    };
     if(url_index_ == url_synonym){
         url = _urls[url_synonym];
         size_t len = _curr_pair.first.length() + 1;
         s = new char[len];
         WC2MB(_curr_pair.first.c_str(), s, len, CP_ACP);
+        trim(s);
         url += s;
         delete[] s;
     }else if(url_index_ != url_vocab){
@@ -521,11 +530,7 @@ void CEnglishTrainingDlg::open_url(URLS url_index_){
             size_t len = _last_eng_word.length() + 1;
             s = new char[len];
             WC2MB(_last_eng_word.c_str(), s, len, CP_ACP);
-            char* p = strchr(s, ',');
-            if(p)*p = '\0';
-            if(p = strchr(s, '('))*p = '\0';
-            if(p = strchr(s, ' '))*p = '\0';
-            if(p = strchr(s, '-'))*p = '\0';
+            trim(s);
             url = _urls[url_index_];
             if(url_index_ != url_bbc)
                 url += s;
