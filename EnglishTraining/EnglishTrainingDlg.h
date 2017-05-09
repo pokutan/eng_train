@@ -137,6 +137,7 @@ private:
     bool _mode_learn;
     HKL _eng_kbd, _rus_kbd;
     gen_random<int>* _rnd;
+    size_t _try_counter = 1, _curr_cue_idx = 0;
 public:
     CStatic SourceWord, Stat_Result, PrevTranslation;
     CComboBox Translations, ComboTO, ComboSearchUrl;

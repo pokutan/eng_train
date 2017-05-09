@@ -155,6 +155,8 @@ void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_, _In_opt_ bool res
         SetWindowTextA(m_hWnd, _caption.c_str());
         return;
     }
+    _try_counter = 1;
+    _curr_cue_idx = 0;
     if(_opt._static_data._vocab_from_rus2eng)
         CheckTranslateFromEng.SetCheck(BST_CHECKED);
     if(_opt._static_data._vocab_auto)
@@ -400,8 +402,6 @@ void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
     MAP_IT it;
     int rus_to_eng = _mode_learn ? !_rus2eng_learn : _opt._static_data._vocab_from_rus2eng;
     Stat_Result.SetWindowTextW(_mode_learn ? L"Choose Translation" : L"Choose Word");
-    static int try_counter = 1;
-    static size_t i = 0;
     switch(check_translation(curr_translation, rus_to_eng)){
     case 1:
         _last_eng_word = _curr_pair.first;
@@ -416,8 +416,8 @@ void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
             PrevTranslation.SetWindowTextW(src.c_str());
             if(_opt.to() != -1)
                 _my_timer = SetTimer(1, _opt.to(), NULL);
-            try_counter = 1;
-            i = 0;
+            _try_counter = 1;
+            _curr_cue_idx = 0;
         }
         break;
     case 2:
@@ -426,10 +426,10 @@ void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
     case 0:
         // after 3 wrong tries we start to suggest translation
         if(_mode_learn){
-            if(++try_counter <= 3)
+            if(++_try_counter <= 3)
                 _text_err = L"Wrong! Try Again: ";
-            else if(i < _curr_right_transl.length())
-                _text_err += _curr_right_transl[i++];
+            else if(_curr_cue_idx < _curr_right_transl.length())
+                _text_err += _curr_right_transl[_curr_cue_idx++];
             Stat_Result.SetWindowTextW(_text_err.c_str());
         }
     }
