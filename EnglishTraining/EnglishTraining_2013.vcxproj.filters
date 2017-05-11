@@ -68,5 +68,11 @@
     <Image Include="res\letter-e-48.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="res\help.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\help.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

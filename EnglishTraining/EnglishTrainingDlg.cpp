@@ -136,6 +136,7 @@ BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
     ON_BN_CLICKED(ID_BTN_ADD_TO_MOST, &CEnglishTrainingDlg::OnBnClickedBtnAddToMost)
     ON_BN_CLICKED(ID_CHECK_USE_PREFER_MAP, &CEnglishTrainingDlg::OnBnClickedCheckUsePreferMap)
     ON_WM_KEYDOWN()
+    ON_BN_CLICKED(ID_BTN_APPHELP, &CEnglishTrainingDlg::OnBnClickedBtnApphelp)
 END_MESSAGE_MAP()
 
 void CEnglishTrainingDlg::fill_main_combo(int rus_){
@@ -732,3 +733,11 @@ void CEnglishTrainingDlg::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags){
 }
 
 BOOL CEnglishTrainingDlg::PreTranslateMessage(MSG* pMsg){ return (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_ESCAPE) ? TRUE : CDialogEx::PreTranslateMessage(pMsg); }
+
+void CEnglishTrainingDlg::OnBnClickedBtnApphelp(){
+    if(CDialog* p = new CDialog(ID_DLG_HELP, this)){
+        p->SetWindowPos(&CWnd::wndTop, 500, 800, 0, 0, SWP_NOMOVE);
+        p->DoModal();
+        delete p;
+    }
+}

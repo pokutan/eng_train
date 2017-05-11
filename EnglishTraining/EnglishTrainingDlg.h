@@ -174,4 +174,5 @@ public:
     afx_msg void OnBnClickedCheckUsePreferMap();
     afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
     virtual BOOL PreTranslateMessage(MSG* pMsg);
+    afx_msg void OnBnClickedBtnApphelp();
 };

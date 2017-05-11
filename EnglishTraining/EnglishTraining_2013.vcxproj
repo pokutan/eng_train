@@ -147,6 +147,8 @@
     <None Include="res\EnglishTraining.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="res\help.bmp" />
+    <Image Include="res\help.png" />
     <Image Include="res\letter-e-48.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
