@@ -38,21 +38,32 @@ void CEnglishTrainingDlg::parse_and_insert_str(wstring& ws, size_t end_ofLine_id
         if(s1.length() && s2.length()){
             // check for English synonyms
             if((seprtr_idx = s1.find(L'(')) != wstring::npos){
-                // check that it's not inside transcription
-                size_t close_bracket = s1.find(L'}');
-                if(close_bracket == wstring::npos || close_bracket < seprtr_idx){
-                    size_t end_brace = s1.find(L')');
-                    if(end_brace != wstring::npos){
-                        wstring syns = s1.substr(seprtr_idx + 1, end_brace - seprtr_idx - 1);
-                        s1 = s1.substr(0, seprtr_idx);
-                        _syns.insert(MAP_PAIR(s1, syns));
+                size_t close_brace = s1.find(L'}');
+                if(close_brace != wstring::npos)
+                    // check that it's not inside transcription (e.g. concur {ken'k:(r)}(agree);translation)
+                    if(close_brace > seprtr_idx){
+                        size_t tmp = wstring(&s1[close_brace + 1]).find(L'(');
+                        if(tmp != wstring::npos && seprtr_idx + tmp < s1.length())
+                            seprtr_idx = close_brace + tmp + 1;
                     }
+                if(seprtr_idx != wstring::npos){
+                    wstring syns_raw = &s1[seprtr_idx];
+                    size_t close_bracket = syns_raw.find(L')');
+                    if(close_bracket != wstring::npos){
+                        wstring syns = syns_raw.substr(1, close_bracket - 1);
+                        if(syns.length()){
+                            s1 = s1.substr(0, seprtr_idx);
+                            _syns.insert(MAP_PAIR(s1, syns));
+                        }
+                    }
+                }else{
+                    // jump outside of transcription
+//                    seprtr_idx = 
                 }
             }
             _words_map.insert(MAP_PAIR(s1, s2));
             if(also_help_map_)
                 _most_active_words_map.insert(MAP_PAIR(s1, s2));
-            //            fill_ui_data(false);
         }
     }
 }

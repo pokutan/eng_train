@@ -124,6 +124,7 @@ private:
         url_examples,
         url_synonym,
         url_bbc,
+        url_youglish,
         url_vocab // keep it last
     };
     void vocab_mode_next_word();

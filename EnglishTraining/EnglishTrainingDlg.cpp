@@ -75,6 +75,7 @@ CEnglishTrainingDlg::CEnglishTrainingDlg(CWnd* pParent /*=NULL*/) : CDialogEx(CE
     _urls[url_examples] = "http://www.macmillandictionary.com/dictionary/british/";
     //_urls[url_bbc] = "https://www.google.com/search?q={_word_}+site%3Abbc.co.uk&oq={_word_}+site%3A_{site}_&aqs=chrome..69i57.11152j0j7&sourceid=chrome&ie=UTF-8";
     _urls[url_bbc] = "https://www.google.com/search?q={_word_}+site%3A_{site}_";
+    _urls[url_youglish] = "https://youglish.com/search/";
     _urls[url_synonym] = "http://www.thesaurus.com/browse/";
 }
 
@@ -511,14 +512,19 @@ void CEnglishTrainingDlg::open_url(URLS url_index_){
         if(p = strchr(s_, '{'))*p = '\0';
         if(p = strchr(s_, '-'))*p = '\0';
     };
-    if(url_index_ == url_synonym){
-        url = _urls[url_synonym];
-        size_t len = _curr_pair.first.length() + 1;
-        s = new char[len];
-        WC2MB(_curr_pair.first.c_str(), s, len, CP_ACP);
-        trim(s);
-        url += s;
-        delete[] s;
+    auto build_url = [&](wstring& s_){
+        if(s_.length()){
+            url = _urls[url_index_];
+            size_t len = s_.length() + 1;
+            s = new char[len];
+            WC2MB(s_.c_str(), s, len, CP_ACP);
+            trim(s);
+            url += s;
+            delete[] s;
+        }
+    };
+    if(url_index_ == url_synonym || url_index_ == url_youglish){
+        build_url(url_index_ == url_synonym ? _curr_pair.first : _last_eng_word);
     }else if(url_index_ != url_vocab){
         if(_opt.is_auto() && !_mode_learn){
             wchar_t s[MAX_PATH]={};
@@ -632,7 +638,7 @@ void CEnglishTrainingDlg::OnDblclkStatPrev(){ open_url(url_examples); }
 
 void CEnglishTrainingDlg::OnStnDblclickStatRes(){ open_url(url_bbc); }
 
-void CEnglishTrainingDlg::OnStnDblclickStatSorceWord(){ /*open_url(url_bbc);*/ }
+void CEnglishTrainingDlg::OnStnDblclickStatSorceWord(){ open_url(url_youglish); }
 
 void CEnglishTrainingDlg::OnActivate(UINT nState,CWnd* pWndOther,BOOL bMinimized){
     CDialogEx::OnActivate(nState,pWndOther,bMinimized);
@@ -736,7 +742,6 @@ BOOL CEnglishTrainingDlg::PreTranslateMessage(MSG* pMsg){ return (pMsg->message 
 
 void CEnglishTrainingDlg::OnBnClickedBtnApphelp(){
     if(CDialog* p = new CDialog(ID_DLG_HELP, this)){
-        p->SetWindowPos(&CWnd::wndTop, 500, 800, 0, 0, SWP_NOMOVE);
         p->DoModal();
         delete p;
     }
