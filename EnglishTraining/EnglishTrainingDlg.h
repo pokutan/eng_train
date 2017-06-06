@@ -113,7 +113,8 @@ private:
     }
     void fill_ui_data(_In_ bool update_prev_, _In_opt_ bool reset_ = false);
     void fill_to_combo();
-    void parse_and_insert_str(wstring& ws, size_t end_ofLine_idx_, bool also_help_map_);
+    void parse_split_buffer(const wstring& ws_, wstring& word_, wstring& transl, wstring& syns_);
+    void parse_and_insert_str(wstring& s_, size_t end_ofLine_idx_, bool also_help_map_);
     void find_and_replace(std::string& src_, char const* find_what_, char const* replace_by_);
     // returns:
     // 0 - not found; 1 - found exact translation; 2 - found substring

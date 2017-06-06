@@ -28,42 +28,67 @@ void CEnglishTrainingDlg::find_and_replace(std::string& src_, char const* find_w
     }
 }
 
-void CEnglishTrainingDlg::parse_and_insert_str(wstring& ws, size_t end_ofLine_idx_, bool also_help_map_){
-    if(ws.length()){
-        size_t seprtr_idx = ws.find(L';');
-        wstring s1 = ws.substr(0, seprtr_idx);
-        wstring s2 = ws.substr(seprtr_idx + 1, end_ofLine_idx_ - seprtr_idx - 1);
-        std::transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
-        std::transform(s2.begin(), s2.end(), s2.begin(), ::tolower);
-        if(s1.length() && s2.length()){
-            // check for English synonyms
-            if((seprtr_idx = s1.find(L'(')) != wstring::npos){
-                size_t close_brace = s1.find(L'}');
-                if(close_brace != wstring::npos)
-                    // check that it's not inside transcription (e.g. concur {ken'k:(r)}(agree);translation)
-                    if(close_brace > seprtr_idx){
-                        size_t tmp = wstring(&s1[close_brace + 1]).find(L'(');
-                        if(tmp != wstring::npos && seprtr_idx + tmp < s1.length())
-                            seprtr_idx = close_brace + tmp + 1;
-                    }
-                if(seprtr_idx != wstring::npos){
-                    wstring syns_raw = &s1[seprtr_idx];
-                    size_t close_bracket = syns_raw.find(L')');
-                    if(close_bracket != wstring::npos){
-                        wstring syns = syns_raw.substr(1, close_bracket - 1);
-                        if(syns.length()){
-                            s1 = s1.substr(0, seprtr_idx);
-                            _syns.insert(MAP_PAIR(s1, syns));
-                        }
-                    }
-                }else{
-                    // jump outside of transcription
-//                    seprtr_idx = 
-                }
-            }
-            _words_map.insert(MAP_PAIR(s1, s2));
+#include <functional> 
+#include <cctype>
+
+// trim from start (in place)
+static inline void ltrim(wstring &s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+        not1(std::ptr_fun<int, int>(isspace))));
+}
+
+// trim from end (in place)
+static inline void rtrim(wstring &s) {
+    s.erase(find_if(s.rbegin(), s.rend(),
+        not1(std::ptr_fun<int, int>(isspace))).base(), s.end());
+}
+
+void CEnglishTrainingDlg::parse_split_buffer(const wstring& ws_, wstring& word_, wstring& transl_, wstring& syns_){
+    // extract translation
+    size_t seprtr_idx = ws_.find(L';');
+    wstring s_word = ws_.substr(0, seprtr_idx);
+    transl_ = ws_.substr(seprtr_idx + 1, wstring::npos);
+    // extract transcription from s_word
+    auto open_brace = s_word.find_first_of(L'{'), close_brace = s_word.find_first_of(L'}');
+    wstring transcr;
+    if(open_brace != wstring::npos && close_brace != wstring::npos){
+        transcr = s_word.substr(open_brace, close_brace - open_brace + 1);
+        wstring s1 = s_word.substr(0, open_brace), s2 = s_word.substr(close_brace + 1, wstring::npos);
+        rtrim(s1);
+        ltrim(s2);
+        rtrim(s2);
+        s_word = s1 + s2;
+    }
+    // extract synonyms
+    auto open_bracket = s_word.find_first_of(L'('), close_bracket = s_word.find_first_of(L')');
+    if(open_bracket != wstring::npos && close_bracket != wstring::npos){
+        syns_ = s_word.substr(open_bracket + 1, close_bracket - open_bracket - 1);
+        wstring s1 = s_word.substr(0, open_bracket), s2 = s_word.substr(close_bracket + 1, wstring::npos);
+        rtrim(s1);
+        ltrim(s2);
+        rtrim(s2);
+        s_word = s1 + s2;
+    }
+    word_ = s_word;
+    // add transcr back to word
+    if(!transcr.empty()){
+        word_ += L' ';
+        word_ += transcr;
+    }
+}
+
+void CEnglishTrainingDlg::parse_and_insert_str(wstring& s_, size_t end_ofLine_idx_, bool also_help_map_){
+    if(s_.length()){
+        wstring s_word, s_transl, s_syns;
+        parse_split_buffer(s_.substr(0, end_ofLine_idx_), s_word, s_transl, s_syns);
+        if(!s_transl.empty())
+            std::transform(s_transl.begin(), s_transl.end(), s_transl.begin(), ::tolower);
+        if(!s_word.empty() && !s_transl.empty()){
+            _words_map.insert(MAP_PAIR(s_word, s_transl));
             if(also_help_map_)
-                _most_active_words_map.insert(MAP_PAIR(s1, s2));
+                _most_active_words_map.insert(MAP_PAIR(s_word, s_transl));
+            if(!s_syns.empty())
+                _syns.insert(MAP_PAIR(s_word, s_syns));
         }
     }
 }
