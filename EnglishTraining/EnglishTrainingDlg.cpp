@@ -12,6 +12,7 @@
 #include <fstream>
 #include <sstream>
 #include <locale>
+#include <list>
 
 using namespace std;
 
@@ -305,16 +306,15 @@ void CEnglishTrainingDlg::read_source_file(){
     std::stringstream ss;
     std::ifstream ifs(_source_file);
     _words_map.clear();
-    _most_active_words_map.clear();
+    _syns.clear();
     _last_eng_word.clear();
     if(ifs.is_open()){
         ss << ifs.rdbuf();
         string s = ss.str();
         if(!(s.size() % sizeof(wchar_t))){
-            _words_map.clear();
             wstring ws;
             ws.resize(s.size() / sizeof(wchar_t));
-            std::memcpy(&ws[0],isalpha(s[0]) ? s.c_str() : s.c_str() + sizeof(wchar_t),isalpha(s[0]) ?  s.size() : s.size()-1);
+            std::memcpy(&ws[0], isalpha(s[0]) ? s.c_str() : s.c_str() + sizeof(wchar_t), isalpha(s[0]) ?  s.size() : s.size() - 1);
             for(;;){
                 bool f = true;
                 size_t seprtr_idx = ws.find(L';');
@@ -329,12 +329,25 @@ void CEnglishTrainingDlg::read_source_file(){
                     break;
                 ws = &ws[new_line_idx + 2];
             }
-//            fill_ui_data(false);
             _it_lasting = _words_map.begin();
         }
         ifs.close();
     }
+    merge_word_maps();
+    _most_active_words_map.clear();
     _rnd->set_range(0,_words_map.size());
+}
+
+void CEnglishTrainingDlg::merge_word_maps(){
+    list<wstring> to_del;
+    MAP_CIT it;
+    for(it = _words_map.begin(); it != _words_map.end(); ++it)
+        if(_most_active_words_map.find(it->first) != _most_active_words_map.end())
+            to_del.push_back(it->first);
+    for(list<wstring>::iterator i = to_del.begin(); i != to_del.end(); ++i)
+        if((it = _words_map.find(*i)) != _words_map.end())
+        _words_map.erase(it);
+    to_del.clear();
 }
 
 void CEnglishTrainingDlg::vocab_mode_next_word(){
