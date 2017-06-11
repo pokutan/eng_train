@@ -412,8 +412,8 @@ void CEnglishTrainingDlg::OnBnClickedBtnSubmit(){
     if(!curr_translation[0])
         return;
     locale loc;
-    for(string::size_type n = 0; n < len; ++n)
-        curr_translation[n] = tolower(curr_translation[n], loc);
+    //for(string::size_type n = 0; n < len; ++n)
+    //    curr_translation[n] = tolower(curr_translation[n], loc);
     MAP_IT it;
     int rus_to_eng = _mode_learn ? !_rus2eng_learn : _opt._static_data._vocab_from_rus2eng;
     Stat_Result.SetWindowTextW(_mode_learn ? L"Choose Translation" : L"Choose Word");
