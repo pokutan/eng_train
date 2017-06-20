@@ -102,7 +102,7 @@ void CEnglishTrainingDlg::DoDataExchange(CDataExchange* pDX){
     DDX_Control(pDX, ID_BTN_DICT, BtnVocabMueller);
     DDX_Control(pDX, ID_BTN_PAUSE, BtnPauseContinue);
     DDX_Control(pDX, ID_BTN_FORW, BtnMoveForward);
-    DDX_Control(pDX, ID_CHECK_USE_PREFER_MAP, CheckUsePreferMap);
+    DDX_Control(pDX, ID_CHECK_USE_PREFER_MAP, CheckBoxUsePreferMap);
 }
 
 BEGIN_MESSAGE_MAP(CEnglishTrainingDlg,CDialogEx)
@@ -186,7 +186,7 @@ void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_, _In_opt_ bool res
                 base_map = false;
             }
         }
-        if(base_map && CheckUsePreferMap.GetCheck()==BST_CHECKED)
+        if(base_map && CheckBoxUsePreferMap.GetCheck()==BST_CHECKED)
             base_map = false;
         MAP_CIT it = _words_map.begin();
         if(_random_pair)
@@ -209,7 +209,6 @@ void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_, _In_opt_ bool res
         _curr_pair = *it;
         it = _syns.find(_curr_pair.first);
         BtnSyns.EnableWindow(it != _syns.end());
-
     }else
         _curr_pair = MAP_PAIR(L"", L"");
     ActivateKeyboardLayout(_mode_learn ? (_rus2eng_learn ? _rus_kbd : _eng_kbd) : (!_opt._static_data._vocab_from_rus2eng ? _rus_kbd : _eng_kbd), KLF_SETFORPROCESS);
@@ -265,6 +264,7 @@ BOOL CEnglishTrainingDlg::OnInitDialog(){
     read_source_file();
     _mode_learn = (_opt.regime() == OPTIONS::A::APP_REGIME::_study_) ? true : false;
     CheckBoxRandom.SetCheck(_random_pair = _opt.rand());
+    CheckBoxUsePreferMap.EnableWindow(FALSE);
     if(_mode_learn)
         OnBnClickedRadioLearn();
     fill_to_combo();
@@ -352,7 +352,7 @@ void CEnglishTrainingDlg::merge_word_maps(){
 
 void CEnglishTrainingDlg::vocab_mode_next_word(){
     ASSERT(!_mode_learn);
-    bool base_map = CheckUsePreferMap.GetCheck()!=BST_CHECKED;
+    bool base_map = CheckBoxUsePreferMap.GetCheck()!=BST_CHECKED;
     if(!base_map && !_most_active_words_map.size())
         base_map = true;
     MAP_CIT it = base_map ? _words_map.end() : _most_active_words_map.end();
@@ -583,6 +583,7 @@ void CEnglishTrainingDlg::OnBnClickedBtnHelp(){
     SourceWord.GetWindowTextW(src, MAX_PATH);
     _most_active_words_map.insert(_curr_pair);
     _words_map.erase(_curr_pair.first);
+    CheckBoxUsePreferMap.EnableWindow(TRUE);
     Translations.SetFocus();
 }
 
@@ -663,8 +664,11 @@ void CEnglishTrainingDlg::OnBnClickedBtnClearWord(){
     if(it != _words_map.end())
         _words_map.erase(it);
     it = _most_active_words_map.find(_curr_pair.first);
-    if(it != _most_active_words_map.end())
+    if(it != _most_active_words_map.end()){
         _most_active_words_map.erase(it);
+        if(!_most_active_words_map.size())
+            CheckBoxUsePreferMap.EnableWindow(FALSE);
+    }
     fill_ui_data(false);
     Translations.SetFocus();
 }
@@ -740,6 +744,7 @@ void CEnglishTrainingDlg::OnBnClickedBtnAddToMost(){
     if(_curr_pair.first.length()){
         _most_active_words_map.insert(_curr_pair);
         _words_map.erase(_curr_pair.first);
+        CheckBoxUsePreferMap.EnableWindow(TRUE);
     }
 }
 

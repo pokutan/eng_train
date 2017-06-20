@@ -144,8 +144,8 @@ private:
 public:
     CStatic SourceWord, Stat_Result, PrevTranslation;
     CComboBox Translations, ComboTO, ComboSearchUrl;
-    CButton RadioLearn, RadioChoose, CheckTranslateFromEng, CheckOnTop, CheckBoxRandom, CheckBoxAuto;
-    CButton BtnSyns, BtnForgetWord, BtnAddWord, BtnPrononc, BtnVocabWebster, BtnVocabMueller, BtnPauseContinue, BtnMoveForward, CheckUsePreferMap;
+    CButton RadioLearn, RadioChoose, CheckTranslateFromEng, CheckOnTop, CheckBoxRandom, CheckBoxAuto, CheckBoxUsePreferMap;
+    CButton BtnSyns, BtnForgetWord, BtnAddWord, BtnPrononc, BtnVocabWebster, BtnVocabMueller, BtnPauseContinue, BtnMoveForward;
     afx_msg void OnTimer(UINT_PTR nIDEvent);
     afx_msg void OnBnClickedBtnSubmit();
     afx_msg void OnCbnSelchangeComboTo();
