@@ -49,7 +49,7 @@ void CEnglishTrainingDlg::parse_split_buffer(const wstring& ws_, wstring& word_,
     wstring s_word = ws_.substr(0, seprtr_idx);
     transl_ = ws_.substr(seprtr_idx + 1, wstring::npos);
     // extract transcription from s_word
-    auto open_brace = s_word.find_first_of(L'{'), close_brace = s_word.find_first_of(L'}');
+    auto open_brace = s_word.find_first_of(L'{'), close_brace = s_word.find_last_of(L'}');
     wstring transcr;
     if(open_brace != wstring::npos && close_brace != wstring::npos){
         transcr = s_word.substr(open_brace, close_brace - open_brace + 1);
