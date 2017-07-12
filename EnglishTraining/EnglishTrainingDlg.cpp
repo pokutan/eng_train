@@ -216,7 +216,9 @@ void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_, _In_opt_ bool res
     ss += " - ";
     ss += _source_file;
     ss += " (";
-    ss += std::to_string(_words_map.size() + _most_active_words_map.size());
+    ss += std::to_string(_words_map.size());
+    ss += " / ";
+    ss += std::to_string(_most_active_words_map.size());
     ss += " words)";
     SetWindowTextA(m_hWnd, ss.c_str());
 }
