@@ -587,6 +587,16 @@ void CEnglishTrainingDlg::OnBnClickedBtnHelp(){
     _words_map.erase(_curr_pair.first);
     CheckBoxUsePreferMap.EnableWindow(TRUE);
     Translations.SetFocus();
+    // update the caption
+    string ss = _caption;
+    ss += " - ";
+    ss += _source_file;
+    ss += " (";
+    ss += std::to_string(_words_map.size());
+    ss += " / ";
+    ss += std::to_string(_most_active_words_map.size());
+    ss += " words)";
+    SetWindowTextA(m_hWnd, ss.c_str());
 }
 
 void CEnglishTrainingDlg::OnBnClickedBtnSetFile(){
