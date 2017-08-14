@@ -475,6 +475,7 @@ void CEnglishTrainingDlg::OnBnClickedBtnReload(){
 }
 
 void CEnglishTrainingDlg::OnBnClickedRadioVocab(){
+    if(GetCheckedRadioButton(IDC_RADIO1,IDC_RADIO2) == IDC_RADIO2)return;
     PrevTranslation.SetWindowTextW(L"Vocabulary mode");
     CheckRadioButton(IDC_RADIO1,IDC_RADIO2,IDC_RADIO2);
     CheckTranslateFromEng.EnableWindow(TRUE);
@@ -499,6 +500,7 @@ void CEnglishTrainingDlg::OnBnClickedRadioVocab(){
 }
 
 void CEnglishTrainingDlg::OnBnClickedRadioLearn(){
+    if(GetCheckedRadioButton(IDC_RADIO1,IDC_RADIO2) == IDC_RADIO1)return;
     CheckRadioButton(IDC_RADIO1,IDC_RADIO2,IDC_RADIO1);
     CheckTranslateFromEng.EnableWindow(FALSE);
     CheckBoxAuto.EnableWindow(FALSE);
