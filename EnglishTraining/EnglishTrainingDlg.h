@@ -17,7 +17,8 @@ struct OPTIONS{
         int _vocab_from_rus2eng, _vocab_auto, _is_random, _url_index;
         enum APP_REGIME{ _study_ = 1, _vocab_ }_regime;
         wchar_t _all_search_urls[20][MAX_PATH];
-        A() : _left(50), _top(100), _to(60*ONE_SEC), _regime(_study_), _url_index(0){ ZeroMemory(_all_search_urls, 20 * MAX_PATH * sizeof(wchar_t)); }
+        char _words_file_path[MAX_PATH];
+        A() : _left(50), _top(100), _to(60*ONE_SEC), _regime(_study_), _url_index(0){ ZeroMemory(_all_search_urls, 20 * MAX_PATH * sizeof(wchar_t)); ZeroMemory(_words_file_path, MAX_PATH); }
     }_static_data;
     long left()const{ return _static_data._left; }
     long top()const{ return _static_data._top; }
@@ -42,9 +43,8 @@ public:
 // Dialog Data
 	enum { IDD = IDD_ENGLISHTRAINING_DIALOG };
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);
-
 
 // Implementation
 protected:
@@ -72,7 +72,6 @@ private:
     WORDS_MAP _syns;
     MAP_PAIR _curr_pair;
     MAP_CIT _it_lasting;
-    char _source_file[MAX_PATH];
     bool _random_pair;
     void read_source_file();
     void fill_main_combo(int rus_);

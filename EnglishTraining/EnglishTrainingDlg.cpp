@@ -24,8 +24,7 @@ OPTIONS::OPTIONS() {
     _cfg_file = CreateFileW(opt_file, GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     DWORD d = sizeof(_static_data);
     if(_cfg_file != INVALID_HANDLE_VALUE && GetLastError() == ERROR_ALREADY_EXISTS)
-        if(ReadFile(_cfg_file, &_static_data, d, &d, NULL))
-            SetFilePointer(_cfg_file, 0, NULL, FILE_BEGIN);
+        ReadFile(_cfg_file, &_static_data, d, &d, NULL);
     wcscpy_s(_static_data._all_search_urls[0], L"cnn.com");
     wcscpy_s(_static_data._all_search_urls[1], L"bbc.co.uk");
     wcscpy_s(_static_data._all_search_urls[2], L"bbc.com");
@@ -52,6 +51,7 @@ OPTIONS::OPTIONS() {
 OPTIONS::~OPTIONS(){
     if(_cfg_file != INVALID_HANDLE_VALUE){
         DWORD d = sizeof(_static_data);
+        SetFilePointer(_cfg_file, 0, NULL, FILE_BEGIN);
         WriteFile(_cfg_file, &_static_data, sizeof(_static_data), &d, NULL);
         CloseHandle(_cfg_file);
     }
@@ -214,7 +214,7 @@ void CEnglishTrainingDlg::fill_ui_data(_In_ bool update_prev_, _In_opt_ bool res
     ActivateKeyboardLayout(_mode_learn ? (_rus2eng_learn ? _rus_kbd : _eng_kbd) : (!_opt._static_data._vocab_from_rus2eng ? _rus_kbd : _eng_kbd), KLF_SETFORPROCESS);
     string ss = _caption;
     ss += " - ";
-    ss += _source_file;
+    ss += _opt._static_data._words_file_path;
     ss += " (";
     ss += std::to_string(_words_map.size());
     ss += " / ";
@@ -246,22 +246,24 @@ BOOL CEnglishTrainingDlg::OnInitDialog(){
     _rus_kbd = LoadKeyboardLayoutW(L"00000419",KLF_SETFORPROCESS|KLF_ACTIVATE);
     DWORD d = MAX_PATH;
     GetComputerNameW(_comp_name,&d);
-    if(!_wcsicmp(_comp_name,L"pokutan")){
-        strcpy_s(_source_file, MAX_PATH, "F:\\Dropbox\\eng\\my_app\\words.txt");
-        if(!IsFileExists(_source_file))
-            strcpy_s(_source_file, MAX_PATH, "f:\\Dropbox\\eng\\my_app\\words.txt");
-    }else if(!_wcsicmp(_comp_name,L"IVANZ1-WS"))
-        strcpy_s(_source_file, MAX_PATH, IsFileExists("\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words.txt") ? "\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words.txt" : "C:\\dev_my\\bin\\words.txt");
-    else if(!_wcsicmp(_comp_name, L"IVANZ-TP"))
-        strcpy_s(_source_file, MAX_PATH, "C:\\Private\\Dropbox\\eng\\my_app\\words.txt");
-    if(!IsFileExists(_source_file)){
-        ::GetCurrentDirectoryA(MAX_PATH, _source_file);
-        strcat_s(_source_file, MAX_PATH, "\\words.txt");
+    if(_opt._static_data._words_file_path[0] == '\0'){
+        if(!_wcsicmp(_comp_name,L"pokutan")){
+            strcpy_s(_opt._static_data._words_file_path, MAX_PATH, "F:\\Dropbox\\eng\\my_app\\words.txt");
+            if(!IsFileExists(_opt._static_data._words_file_path))
+                strcpy_s(_opt._static_data._words_file_path, MAX_PATH, "f:\\Dropbox\\eng\\my_app\\words.txt");
+        }else if(!_wcsicmp(_comp_name,L"IVANZ1-WS"))
+            strcpy_s(_opt._static_data._words_file_path, MAX_PATH, IsFileExists("\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words.txt") ? "\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words.txt" : "C:\\dev_my\\bin\\words.txt");
+        else if(!_wcsicmp(_comp_name, L"IVANZ-TP"))
+            strcpy_s(_opt._static_data._words_file_path, MAX_PATH, "C:\\Private\\Dropbox\\eng\\my_app\\words.txt");
+        if(!IsFileExists(_opt._static_data._words_file_path)){
+            ::GetCurrentDirectoryA(MAX_PATH, _opt._static_data._words_file_path);
+            strcat_s(_opt._static_data._words_file_path, MAX_PATH, "\\words.txt");
+        }
     }
-    OutputDebugStringA(_source_file);
+    OutputDebugStringA(_opt._static_data._words_file_path);
 #ifdef _DEBUG
     if(IsFileExists("\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words_debug.txt"))
-        strcpy_s(_source_file, MAX_PATH, "\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words_debug.txt");
+        strcpy_s(_opt._static_data._words_file_path, MAX_PATH, "\\\\ivanz-tp\\Dropbox\\eng\\my_app\\words_debug.txt");
 #endif
     read_source_file();
     _mode_learn = (_opt.regime() == OPTIONS::A::APP_REGIME::_study_) ? true : false;
@@ -302,11 +304,11 @@ void CEnglishTrainingDlg::OnPaint(){
 HCURSOR CEnglishTrainingDlg::OnQueryDragIcon(){ return static_cast<HCURSOR>(m_hIcon); }
 
 void CEnglishTrainingDlg::read_source_file(){
-    //if(!IsFileExists(_source_file))
-    //    if(!DownloadFileSynch("http://www.pokutan.com/tmp/words.txt",_source_file))
+    //if(!IsFileExists(_opt._static_data._words_file_path))
+    //    if(!DownloadFileSynch("http://www.pokutan.com/tmp/words.txt",_opt._static_data._words_file_path))
     //        return;
     std::stringstream ss;
-    std::ifstream ifs(_source_file);
+    std::ifstream ifs(_opt._static_data._words_file_path);
     _words_map.clear();
     _syns.clear();
     _last_eng_word.clear();
@@ -463,7 +465,7 @@ void CEnglishTrainingDlg::OnCbnSelchangeComboTo(){
 }
 
 void CEnglishTrainingDlg::OnBnClickedBtnEditfile(){
-    ShellExecuteA(m_hWnd, "edit", _source_file, NULL, NULL, SW_SHOWNA);
+    ShellExecuteA(m_hWnd, "edit", _opt._static_data._words_file_path, NULL, NULL, SW_SHOWNA);
 }
 
 void CEnglishTrainingDlg::OnBnClickedBtnReload(){
@@ -592,7 +594,7 @@ void CEnglishTrainingDlg::OnBnClickedBtnHelp(){
     // update the caption
     string ss = _caption;
     ss += " - ";
-    ss += _source_file;
+    ss += _opt._static_data._words_file_path;
     ss += " (";
     ss += std::to_string(_words_map.size());
     ss += " / ";
@@ -606,7 +608,7 @@ void CEnglishTrainingDlg::OnBnClickedBtnSetFile(){
     fd.DoModal();
     OPENFILENAME ofn = fd.GetOFN();
     if(ofn.lpstrFile[0]){
-        WideCharToMultiByte(CP_ACP,0,ofn.lpstrFile,-1,_source_file, MAX_PATH,NULL,NULL);
+        WideCharToMultiByte(CP_ACP,0,ofn.lpstrFile,-1,_opt._static_data._words_file_path, MAX_PATH,NULL,NULL);
         OnBnClickedBtnReload();
     }
 }
